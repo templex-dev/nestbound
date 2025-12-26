@@ -1041,159 +1041,449 @@
 
     // ============ RENDER ============
     const SKY = {
-        dawn: ['#4a3066', '#ff9a56'],
-        day: ['#5588bb', '#99ccee'],
-        dusk: ['#2d1b4e', '#ff6b6b'],
-        night: ['#080810', '#101020']
+        dawn: { top: '#2a1a3a', mid: '#6a3050', bottom: '#ff8844' },
+        day: { top: '#3366aa', mid: '#5588cc', bottom: '#88bbdd' },
+        dusk: { top: '#1a0a2a', mid: '#553355', bottom: '#cc5533' },
+        night: { top: '#050508', mid: '#0a0a12', bottom: '#101018' }
     };
 
     let ambientTimer = 0;
+
+    // Dithering pattern for pixel gradients
+    function ditherPixel(x, y, ratio) {
+        const pattern = [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5]
+        ];
+        const threshold = pattern[y % 4][x % 4] / 16;
+        return ratio > threshold;
+    }
+
+    // Draw pixel-perfect cloud
+    function drawCloud(cx, cy, size) {
+        const alpha = game.time === 'night' ? 0.15 : game.time === 'dusk' ? 0.4 : 0.7;
+        px.fillStyle = `rgba(255,255,255,${alpha})`;
+        // Cloud puffs as pixel blocks
+        px.fillRect(cx, cy, size * 3, size);
+        px.fillRect(cx + size, cy - size, size * 2, size);
+        px.fillRect(cx - size, cy + size/2, size, size/2);
+        px.fillRect(cx + size * 2, cy + size/2, size, size/2);
+        // Highlight
+        px.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+        px.fillRect(cx + size, cy - size, size, 2);
+    }
+
+    // Draw pixel tree silhouette
+    function drawPixelTree(x, baseY, height, width, color1, color2) {
+        // Trunk
+        px.fillStyle = game.time === 'night' ? '#0a0808' : '#2a1a10';
+        px.fillRect(x + width/2 - 2, baseY - 8, 4, 10);
+
+        // Foliage layers
+        for (let layer = 0; layer < 3; layer++) {
+            const layerY = baseY - height + layer * (height / 3);
+            const layerW = width - layer * 4;
+            const offsetX = layer * 2;
+
+            px.fillStyle = layer === 0 ? color1 : color2;
+            // Jagged tree shape
+            px.fillRect(x + offsetX, layerY, layerW, height / 3 + 2);
+            // Add pixel detail
+            if (layer < 2) {
+                px.fillRect(x + offsetX - 2, layerY + 2, 2, height / 4);
+                px.fillRect(x + offsetX + layerW, layerY + 2, 2, height / 4);
+            }
+        }
+    }
+
+    // Draw a mountain with pixel detail
+    function drawMountain(x, baseY, height, width, color, snowColor) {
+        // Main mountain body
+        for (let row = 0; row < height; row++) {
+            const rowWidth = Math.floor(width * (1 - row / height));
+            const startX = x + Math.floor((width - rowWidth) / 2);
+            px.fillStyle = color;
+            px.fillRect(startX, baseY - row, rowWidth, 1);
+        }
+        // Snow cap
+        if (snowColor && height > 20) {
+            const snowHeight = Math.floor(height * 0.3);
+            for (let row = 0; row < snowHeight; row++) {
+                const rowWidth = Math.floor(width * 0.4 * (1 - row / snowHeight));
+                const startX = x + Math.floor((width - rowWidth) / 2);
+                // Dithered snow edge
+                if (row > snowHeight * 0.6) {
+                    for (let px2 = 0; px2 < rowWidth; px2++) {
+                        if ((px2 + row) % 2 === 0) {
+                            px.fillStyle = snowColor;
+                            px.fillRect(startX + px2, baseY - height + row, 1, 1);
+                        }
+                    }
+                } else {
+                    px.fillStyle = snowColor;
+                    px.fillRect(startX, baseY - height + row, rowWidth, 1);
+                }
+            }
+        }
+    }
 
     function render() {
         px.fillStyle = '#000';
         px.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Sky
-        const [c1, c2] = SKY[game.time];
-        const grad = px.createLinearGradient(0, 0, 0, HEIGHT);
-        grad.addColorStop(0, c1);
-        grad.addColorStop(1, c2);
-        px.fillStyle = grad;
-        px.fillRect(0, 0, WIDTH, HEIGHT);
+        const sky = SKY[game.time];
 
-        // Stars at night
+        // Dithered sky gradient - more pixel-y
+        for (let y = 0; y < HEIGHT; y++) {
+            const ratio = y / HEIGHT;
+            let color;
+            if (ratio < 0.5) {
+                const localRatio = ratio * 2;
+                // Blend top to mid
+                if (ditherPixel(0, y, localRatio)) {
+                    color = sky.mid;
+                } else {
+                    color = sky.top;
+                }
+            } else {
+                const localRatio = (ratio - 0.5) * 2;
+                if (ditherPixel(0, y, localRatio)) {
+                    color = sky.bottom;
+                } else {
+                    color = sky.mid;
+                }
+            }
+            px.fillStyle = color;
+            px.fillRect(0, y, WIDTH, 1);
+        }
+
+        // Stars at night/dusk with twinkling
         if (game.time === 'night' || game.time === 'dusk') {
-            const starAlpha = game.time === 'night' ? 1 : 0.3;
-            px.fillStyle = `rgba(255,255,255,${starAlpha})`;
-            for (let i = 0; i < 30; i++) {
-                const twinkle = Math.sin(Date.now() * 0.003 + i) * 0.5 + 0.5;
-                if (twinkle > 0.3) {
-                    px.fillRect((i * 47 + 13) % WIDTH, (i * 31 + 7) % 100, 1, 1);
+            const starAlpha = game.time === 'night' ? 1 : 0.4;
+            // Different star sizes
+            for (let i = 0; i < 50; i++) {
+                const twinkle = Math.sin(Date.now() * 0.002 + i * 1.7) * 0.5 + 0.5;
+                if (twinkle > 0.25) {
+                    const sx = (i * 47 + 13) % WIDTH;
+                    const sy = (i * 31 + 7) % 120;
+                    const size = i % 5 === 0 ? 2 : 1;
+                    px.fillStyle = `rgba(255,255,${200 + (i % 55)},${starAlpha * twinkle})`;
+                    px.fillRect(sx, sy, size, size);
+                    // Cross twinkle for bright stars
+                    if (size === 2 && twinkle > 0.7) {
+                        px.fillStyle = `rgba(255,255,255,${starAlpha * 0.5})`;
+                        px.fillRect(sx - 1, sy + 1, 1, 1);
+                        px.fillRect(sx + 2, sy + 1, 1, 1);
+                    }
                 }
             }
         }
 
-        // Sun/Moon
+        // Sun with rays
         if (game.time === 'day') {
-            px.fillStyle = '#ffee55';
-            px.fillRect(320, 25, 24, 24);
-            px.fillStyle = '#ffff88';
-            px.fillRect(322, 27, 20, 20);
+            // Sun glow
+            px.fillStyle = '#ffee8833';
+            px.fillRect(310, 15, 36, 36);
+            // Sun body
+            px.fillStyle = '#ffdd44';
+            px.fillRect(316, 22, 24, 24);
+            px.fillStyle = '#ffee66';
+            px.fillRect(318, 24, 20, 20);
+            px.fillStyle = '#ffffaa';
+            px.fillRect(320, 26, 16, 16);
+            // Rays
+            px.fillStyle = '#ffee44';
+            px.fillRect(328, 14, 2, 6);
+            px.fillRect(328, 48, 2, 6);
+            px.fillRect(306, 32, 6, 2);
+            px.fillRect(346, 32, 6, 2);
         } else if (game.time === 'dawn') {
-            px.fillStyle = '#ffaa44';
-            px.fillRect(50, 80, 20, 20);
+            // Rising sun
+            px.fillStyle = '#ff660033';
+            px.fillRect(35, 70, 40, 30);
+            px.fillStyle = '#ff8844';
+            px.fillRect(42, 78, 26, 22);
+            px.fillStyle = '#ffaa66';
+            px.fillRect(44, 80, 22, 18);
+            px.fillStyle = '#ffcc88';
+            px.fillRect(48, 84, 14, 12);
+            // Horizon glow
+            px.fillStyle = '#ff884422';
+            px.fillRect(0, 90, 120, 20);
         } else if (game.time === 'dusk') {
-            px.fillStyle = '#ff6644';
-            px.fillRect(340, 70, 18, 18);
+            // Setting sun
+            px.fillStyle = '#cc330033';
+            px.fillRect(330, 60, 36, 30);
+            px.fillStyle = '#dd4422';
+            px.fillRect(336, 66, 24, 22);
+            px.fillStyle = '#ee6633';
+            px.fillRect(340, 70, 16, 16);
+            px.fillStyle = '#ff8844';
+            px.fillRect(344, 74, 8, 10);
         } else if (game.time === 'night') {
+            // Moon with detail
+            px.fillStyle = '#aabbcc';
+            px.fillRect(315, 25, 22, 22);
+            px.fillStyle = '#ccddee';
+            px.fillRect(317, 27, 18, 18);
             px.fillStyle = '#ddeeff';
-            px.fillRect(320, 30, 18, 18);
-            px.fillStyle = '#080810';
-            px.fillRect(325, 28, 12, 12);
+            px.fillRect(319, 29, 14, 14);
+            // Crescent shadow
+            px.fillStyle = '#0a0a12';
+            px.fillRect(325, 27, 10, 16);
+            // Craters
+            px.fillStyle = '#99aabb';
+            px.fillRect(320, 33, 2, 2);
+            px.fillRect(324, 38, 3, 2);
         }
 
-        // Clouds (daytime)
-        if (game.time === 'day' || game.time === 'dawn') {
-            px.fillStyle = 'rgba(255,255,255,0.6)';
-            const cloudX = (Date.now() * 0.01) % (WIDTH + 100) - 50;
-            px.fillRect(cloudX, 50, 30, 10);
-            px.fillRect(cloudX + 5, 45, 20, 8);
-            px.fillRect(cloudX + 100, 70, 25, 8);
+        // Pixel clouds - layered
+        if (game.time === 'day' || game.time === 'dawn' || game.time === 'dusk') {
+            const cloudOffset = (Date.now() * 0.008) % (WIDTH + 120);
+            drawCloud(cloudOffset - 60, 45, 6);
+            drawCloud((cloudOffset + 150) % (WIDTH + 80) - 40, 62, 5);
+            drawCloud((cloudOffset + 280) % (WIDTH + 100) - 50, 38, 7);
+            // Smaller distant clouds
+            const alpha = game.time === 'night' ? 0.1 : 0.35;
+            px.fillStyle = `rgba(255,255,255,${alpha})`;
+            px.fillRect((cloudOffset * 0.5 + 80) % WIDTH, 85, 12, 3);
+            px.fillRect((cloudOffset * 0.5 + 200) % WIDTH, 95, 8, 2);
         }
 
-        // Distant mountains
-        px.fillStyle = game.time === 'night' ? '#151525' : '#667788';
-        px.beginPath();
-        px.moveTo(0, 240);
-        for (let x = 0; x <= WIDTH; x += 20) {
-            px.lineTo(x, 190 + Math.sin(x * 0.03) * 25 + Math.sin(x * 0.07) * 10);
-        }
-        px.lineTo(WIDTH, HEIGHT);
-        px.lineTo(0, HEIGHT);
-        px.fill();
+        // Far mountains with snow caps
+        const mtColor = game.time === 'night' ? '#12141a' : '#556677';
+        const snowCol = game.time === 'night' ? '#2a2a35' : '#ddeeff';
+        drawMountain(20, 215, 45, 60, mtColor, snowCol);
+        drawMountain(100, 210, 55, 80, game.time === 'night' ? '#101218' : '#4a5566', snowCol);
+        drawMountain(200, 218, 38, 55, mtColor, null);
+        drawMountain(280, 205, 60, 90, game.time === 'night' ? '#0e1015' : '#445566', snowCol);
+        drawMountain(360, 212, 42, 50, mtColor, null);
 
-        // Closer hills
-        px.fillStyle = game.time === 'night' ? '#101820' : '#556655';
-        px.beginPath();
-        px.moveTo(0, 250);
-        for (let x = 0; x <= WIDTH; x += 15) {
-            px.lineTo(x, 220 + Math.sin(x * 0.05 + 1) * 15);
-        }
-        px.lineTo(WIDTH, HEIGHT);
-        px.lineTo(0, HEIGHT);
-        px.fill();
-
-        // Forest
-        px.fillStyle = game.time === 'night' ? '#0a150a' : '#334433';
-        for (let x = 0; x < WIDTH; x += 12) {
-            const h = 18 + Math.sin(x * 0.15) * 8 + Math.sin(x * 0.3) * 4;
-            px.fillRect(x, 235 - h, 10, h + 15);
+        // Mid-ground hills with texture
+        const hillColor = game.time === 'night' ? '#0a1210' : '#3a4a3a';
+        const hillLight = game.time === 'night' ? '#0c1412' : '#4a5a4a';
+        for (let x = 0; x < WIDTH; x++) {
+            const h = Math.floor(12 + Math.sin(x * 0.04) * 8 + Math.sin(x * 0.09) * 5);
+            const baseY = 225;
+            // Main hill
+            px.fillStyle = hillColor;
+            px.fillRect(x, baseY - h, 1, h + 30);
+            // Highlight on top
+            if ((x + Math.floor(h)) % 4 === 0) {
+                px.fillStyle = hillLight;
+                px.fillRect(x, baseY - h, 1, 2);
+            }
         }
 
-        // Tree trunk
-        px.fillStyle = '#3a2515';
-        px.fillRect(35, 90, 30, 170);
-        // Bark texture
-        px.fillStyle = '#2a1a0a';
-        px.fillRect(40, 100, 3, 20);
-        px.fillRect(50, 130, 4, 15);
-        px.fillRect(38, 170, 3, 25);
+        // Distant forest - individual pixel trees
+        const treeColor1 = game.time === 'night' ? '#0a150a' : '#2a4a2a';
+        const treeColor2 = game.time === 'night' ? '#081208' : '#1a3a1a';
+        for (let i = 0; i < 25; i++) {
+            const tx = i * 16 + (i % 3) * 4;
+            const th = 20 + (i % 5) * 5 + Math.sin(i) * 4;
+            const tw = 10 + (i % 3) * 2;
+            drawPixelTree(tx, 235, th, tw, treeColor1, treeColor2);
+        }
 
-        // Branch
-        px.fillStyle = '#4a3520';
-        px.fillRect(55, 192, 320, 14);
-        px.fillStyle = '#3a2510';
-        px.fillRect(55, 200, 320, 6);
+        // Foreground grass tufts
+        if (game.time !== 'night') {
+            px.fillStyle = '#4a6a3a';
+            for (let i = 0; i < 20; i++) {
+                const gx = (i * 23 + 5) % WIDTH;
+                px.fillRect(gx, 248, 2, 4);
+                px.fillRect(gx + 3, 249, 1, 3);
+            }
+        }
 
-        // Leaves on branch
-        px.fillStyle = game.time === 'night' ? '#1a2a1a' : '#4a6a3a';
-        px.fillRect(50, 185, 15, 10);
-        px.fillRect(280, 183, 20, 12);
-        px.fillRect(350, 186, 18, 10);
+        // Main tree trunk - detailed bark
+        const barkDark = game.time === 'night' ? '#1a1008' : '#2a1810';
+        const barkMid = game.time === 'night' ? '#2a1810' : '#3a2515';
+        const barkLight = game.time === 'night' ? '#3a2515' : '#4a3020';
 
-        // Nest - more detailed
-        px.fillStyle = '#5a4030';
-        px.fillRect(142, NEST_Y + 2, 116, 28);
-        px.fillStyle = '#6b5040';
-        px.fillRect(147, NEST_Y - 3, 106, 18);
-        px.fillStyle = '#7a6550';
-        px.fillRect(152, NEST_Y - 7, 96, 12);
-        // Nest texture
-        px.fillStyle = '#4a3020';
+        // Trunk base
+        px.fillStyle = barkMid;
+        px.fillRect(32, 85, 36, 180);
+
+        // Bark texture - vertical grooves
+        px.fillStyle = barkDark;
+        for (let y = 85; y < 260; y += 8) {
+            px.fillRect(35, y, 2, 6);
+            px.fillRect(42, y + 3, 3, 5);
+            px.fillRect(52, y + 1, 2, 7);
+            px.fillRect(60, y + 4, 2, 4);
+        }
+        // Bark highlights
+        px.fillStyle = barkLight;
+        px.fillRect(38, 90, 2, 15);
+        px.fillRect(48, 110, 3, 20);
+        px.fillRect(36, 150, 2, 12);
+        px.fillRect(55, 170, 2, 18);
+
+        // Knot holes
+        px.fillStyle = '#1a0a05';
+        px.fillRect(45, 130, 4, 5);
+        px.fillRect(38, 185, 3, 4);
+        px.fillStyle = barkDark;
+        px.fillRect(46, 131, 2, 3);
+
+        // Main branch - detailed
+        const branchColor = game.time === 'night' ? '#2a1a10' : '#4a3520';
+        const branchDark = game.time === 'night' ? '#1a1008' : '#3a2510';
+        const branchLight = game.time === 'night' ? '#3a2515' : '#5a4530';
+
+        px.fillStyle = branchColor;
+        px.fillRect(55, 190, 330, 16);
+        // Branch top highlight
+        px.fillStyle = branchLight;
+        px.fillRect(55, 190, 330, 3);
+        // Branch bottom shadow
+        px.fillStyle = branchDark;
+        px.fillRect(55, 202, 330, 4);
+        // Branch texture
+        for (let bx = 60; bx < 380; bx += 20) {
+            px.fillStyle = branchDark;
+            px.fillRect(bx, 193, 2, 8);
+            px.fillRect(bx + 8, 194, 3, 6);
+        }
+
+        // Leaves on branch - clusters
+        const leafColor1 = game.time === 'night' ? '#1a2a15' : '#4a7a3a';
+        const leafColor2 = game.time === 'night' ? '#152210' : '#3a6a2a';
+        const leafHighlight = game.time === 'night' ? '#223a1a' : '#5a8a4a';
+
+        // Left leaves
+        px.fillStyle = leafColor2;
+        px.fillRect(45, 180, 22, 14);
+        px.fillStyle = leafColor1;
+        px.fillRect(48, 178, 16, 10);
+        px.fillStyle = leafHighlight;
+        px.fillRect(50, 179, 8, 4);
+        px.fillRect(42, 185, 4, 3);
+
+        // Right side leaves clusters
+        px.fillStyle = leafColor2;
+        px.fillRect(275, 178, 28, 16);
+        px.fillStyle = leafColor1;
+        px.fillRect(278, 176, 22, 12);
+        px.fillStyle = leafHighlight;
+        px.fillRect(282, 177, 10, 5);
+
+        px.fillStyle = leafColor2;
+        px.fillRect(345, 182, 24, 12);
+        px.fillStyle = leafColor1;
+        px.fillRect(348, 180, 18, 10);
+        px.fillStyle = leafHighlight;
+        px.fillRect(352, 181, 8, 4);
+
+        // Small leaves scattered
+        px.fillStyle = leafColor1;
+        px.fillRect(120, 186, 6, 4);
+        px.fillRect(180, 184, 5, 5);
+        px.fillRect(220, 187, 4, 3);
+        px.fillRect(320, 183, 5, 4);
+
+        // Nest - detailed with twigs
+        const nestDark = game.time === 'night' ? '#2a1a10' : '#4a3020';
+        const nestMid = game.time === 'night' ? '#3a2515' : '#6b5040';
+        const nestLight = game.time === 'night' ? '#4a3020' : '#8a7060';
+        const nestHighlight = game.time === 'night' ? '#5a4030' : '#9a8070';
+
+        // Nest outer shell
+        px.fillStyle = nestDark;
+        px.fillRect(140, NEST_Y + 5, 120, 25);
+
+        // Nest body layers
+        px.fillStyle = nestMid;
+        px.fillRect(144, NEST_Y, 112, 22);
+        px.fillStyle = nestLight;
+        px.fillRect(148, NEST_Y - 5, 104, 18);
+
+        // Nest interior (darker)
+        px.fillStyle = nestDark;
+        px.fillRect(155, NEST_Y - 3, 90, 10);
+
+        // Twig texture - horizontal
+        px.fillStyle = nestDark;
+        for (let i = 0; i < 12; i++) {
+            const tx = 148 + i * 9;
+            const ty = NEST_Y - 3 + (i % 3) * 3;
+            px.fillRect(tx, ty, 7, 2);
+        }
+        // Vertical twigs
         for (let i = 0; i < 8; i++) {
-            px.fillRect(150 + i * 12, NEST_Y - 5 + (i % 3) * 2, 8, 2);
+            const tx = 152 + i * 13;
+            px.fillRect(tx, NEST_Y - 6 + (i % 2) * 2, 2, 6);
         }
+
+        // Nest rim highlight
+        px.fillStyle = nestHighlight;
+        px.fillRect(150, NEST_Y - 7, 100, 2);
+        px.fillRect(148, NEST_Y - 5, 2, 4);
+        px.fillRect(250, NEST_Y - 5, 2, 4);
+
+        // Feathers in nest
+        px.fillStyle = game.time === 'night' ? '#3a3530' : '#ccbbaa';
+        px.fillRect(160, NEST_Y - 2, 4, 2);
+        px.fillRect(200, NEST_Y - 1, 3, 2);
+        px.fillRect(235, NEST_Y - 2, 4, 2);
 
         // Ambient leaves falling
         ambientTimer++;
         if (game.time === 'day' || game.time === 'dawn') {
-            if (ambientTimer % 120 === 0) {
+            if (ambientTimer % 90 === 0) {
                 addParticle(Math.random() * WIDTH, -10, 'leaf');
+            }
+        }
+
+        // Distant birds (small v-shapes)
+        if (game.time === 'day' || game.time === 'dawn') {
+            const birdTime = Date.now() * 0.01;
+            px.fillStyle = '#00000044';
+            for (let i = 0; i < 3; i++) {
+                const bx = ((birdTime + i * 80) % (WIDTH + 50)) - 25;
+                const by = 70 + i * 15 + Math.sin(birdTime * 0.5 + i) * 5;
+                px.fillRect(bx, by, 2, 1);
+                px.fillRect(bx + 3, by - 1, 2, 1);
+                px.fillRect(bx + 6, by, 2, 1);
             }
         }
 
         // Food
         if (food) {
             const foodBob = Math.sin(food.bobTimer) * 2;
-            px.fillStyle = '#ff6666';
-            px.fillRect(food.x - 5, food.y + foodBob, 10, 5);
-            px.fillStyle = '#ff4444';
-            px.fillRect(food.x - 3, food.y + 2 + foodBob, 6, 3);
             // Glow
-            px.fillStyle = '#ff666633';
-            px.fillRect(food.x - 8, food.y - 3 + foodBob, 16, 11);
+            px.fillStyle = '#ff444422';
+            px.fillRect(food.x - 10, food.y - 5 + foodBob, 20, 14);
+            // Berry body
+            px.fillStyle = '#cc3333';
+            px.fillRect(food.x - 6, food.y + foodBob, 12, 7);
+            px.fillStyle = '#ee4444';
+            px.fillRect(food.x - 4, food.y - 1 + foodBob, 8, 6);
+            px.fillStyle = '#ff6666';
+            px.fillRect(food.x - 2, food.y + foodBob, 4, 3);
+            // Stem
+            px.fillStyle = '#2a4a1a';
+            px.fillRect(food.x, food.y - 3 + foodBob, 2, 3);
         }
 
-        // Bugs
+        // Bugs with more detail
         bugs.forEach(b => {
             if (!b.got) {
                 const size = b.type === 'big' ? 6 : 4;
-                px.fillStyle = b.type === 'big' ? '#66dd66' : '#44bb44';
+                // Body
+                px.fillStyle = b.type === 'big' ? '#55cc55' : '#44aa44';
                 px.fillRect(b.x - size/2, b.y - size/2, size, size);
-                // Wings
+                // Head
+                px.fillStyle = b.type === 'big' ? '#448844' : '#337733';
+                px.fillRect(b.x - size/2 - 2, b.y - 1, 2, 2);
+                // Wings animated
+                const wingFlap = Math.sin(Date.now() * 0.03 + b.x) > 0;
                 px.fillStyle = '#88ff8866';
-                px.fillRect(b.x - size/2 - 2, b.y - 2, 2, 3);
-                px.fillRect(b.x + size/2, b.y - 2, 2, 3);
+                const wingY = wingFlap ? -3 : -1;
+                px.fillRect(b.x - 1, b.y + wingY, 2, 2);
+                px.fillRect(b.x + size/2 - 1, b.y + wingY, 2, 2);
             }
         });
 
@@ -1207,21 +1497,21 @@
         // Player
         player.draw();
 
-        // Shadow (hawk)
+        // Shadow (hawk) - pixelated
         if (shadowOn) {
-            px.fillStyle = '#00000066';
-            // More menacing hawk shape
-            px.beginPath();
-            px.moveTo(shadowX, 140);
-            px.lineTo(shadowX - 30, 160);
-            px.lineTo(shadowX - 45, 180);
-            px.lineTo(shadowX - 20, 165);
-            px.lineTo(shadowX, 170);
-            px.lineTo(shadowX + 20, 165);
-            px.lineTo(shadowX + 45, 180);
-            px.lineTo(shadowX + 30, 160);
-            px.closePath();
-            px.fill();
+            px.fillStyle = '#00000055';
+            const sx = Math.floor(shadowX);
+            // Pixel hawk silhouette
+            px.fillRect(sx - 4, 145, 8, 6);  // body
+            px.fillRect(sx - 2, 140, 4, 5);   // head
+            // Wings
+            px.fillRect(sx - 35, 148, 30, 4);
+            px.fillRect(sx + 5, 148, 30, 4);
+            px.fillRect(sx - 40, 152, 15, 3);
+            px.fillRect(sx + 25, 152, 15, 3);
+            // Tail
+            px.fillRect(sx - 3, 151, 6, 8);
+            px.fillRect(sx - 5, 156, 10, 4);
         }
 
         // Scale to main canvas
