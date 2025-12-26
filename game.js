@@ -8,7 +8,6 @@
     const ctx = canvas.getContext('2d');
 
     // PIXEL ART: Render at half size, scale up 2x
-    const SCALE = 2;
     const WIDTH = 400;
     const HEIGHT = 300;
     canvas.width = 800;
@@ -34,168 +33,145 @@
         wingStrength: 10
     };
 
-    const keys = { left: false, right: false, up: false, space: false, spacePressed: false };
+    const keys = { left: false, right: false, up: false, space: false, justPressed: false };
 
     // ============ DIALOGUE DATA ============
     const DIALOGUES = {
         'hatching_1': [
             ['narrator', '...'],
-            ['narrator', 'Darkness. Warmth. A steady heartbeat.'],
-            ['narrator', 'Then... a crack. Light seeps in.']
+            ['narrator', 'Darkness. Warmth. A heartbeat.'],
+            ['narrator', 'Then... a crack.']
         ],
         'hatching_2': [
-            ['narrator', 'You push. The shell gives way.'],
-            ['narrator', 'The world is bright. Beautiful.'],
+            ['narrator', 'You push. The shell breaks.'],
             ['mama', 'There you are, little one.'],
-            ['mama', "I've been waiting for you."],
             ['mama', 'Welcome to the world, Pip.']
         ],
         'mama_intro': [
-            ['mama', 'This is our nest, high in the oak tree.'],
-            ['mama', 'Try hopping around. Use ARROW KEYS.']
+            ['mama', 'This is our nest.'],
+            ['mama', 'Try hopping! Use ARROW KEYS.']
         ],
         'mama_good': [
-            ['mama', "That's it! You're doing great!"]
+            ['mama', 'Good job!']
         ],
         'mama_siblings': [
-            ['mama', 'See those little ones? Your siblings.'],
-            ['mama', "Wren and Bramble. They're still resting."]
+            ['mama', 'Your siblings, Wren and Bramble.'],
+            ['mama', 'They are still resting.']
         ],
         'mama_rest': [
-            ['mama', 'The world outside is vast...'],
-            ['mama', 'But for now, rest. Grow strong.'],
-            ['mama', 'Your father will return with food.']
+            ['mama', 'Rest now. Grow strong.'],
+            ['mama', 'Papa will bring food soon.']
         ],
         'papa_arrives': [
-            ['narrator', 'A shadow passes. But this one is familiar.'],
-            ['papa', "I'm back! Look what I found."],
-            ['papa', 'Pip! You have your mothers eyes.']
+            ['papa', "I'm back!"],
+            ['papa', 'Pip! You hatched!']
         ],
         'papa_food': [
-            ['papa', 'You must be hungry.'],
-            ['papa', 'Move to the food and press SPACE.']
+            ['papa', 'Hungry? Go eat!'],
+            ['papa', 'Move to food, press SPACE.']
         ],
         'papa_good': [
-            ['papa', "That's my Pip!"],
-            ['pip', '(You feel stronger.)']
+            ['papa', 'Good!']
         ],
         'papa_warning': [
-            ['papa', 'The forest was quiet today...'],
-            ['mama', 'Not now. Not in front of them.'],
-            ['papa', 'Rest now. Tomorrow, we train.']
+            ['papa', 'The forest was too quiet...'],
+            ['mama', 'Shh. Not now.']
         ],
         'siblings_wake': [
-            ['bramble', '*yawn* Morning already?'],
-            ['wren', 'Look - Pip hatched!']
+            ['bramble', '*yawn* Huh?'],
+            ['wren', 'Pip hatched!']
         ],
         'wren_intro': [
-            ['wren', "Hey! I'm Wren, your big sister."],
-            ['wren', "I'll show you everything!"]
+            ['wren', "I'm Wren! Your sister!"]
         ],
         'bramble_intro': [
-            ['bramble', "I'm BRAMBLE! Best flyer ever!"],
-            ['bramble', 'Wanna race?!']
+            ['bramble', "I'm BRAMBLE!"],
+            ['bramble', 'Race me!']
         ],
         'bramble_challenge': [
-            ['bramble', 'First to the right side wins!'],
-            ['bramble', 'GO!']
+            ['bramble', 'To the right! GO!']
         ],
         'race_result': [
-            ['bramble', "Whoa! You're fast!"],
-            ['mama', 'Settle down. Night is coming.']
+            ['bramble', 'Fast!'],
+            ['mama', 'Time for bed.']
         ],
         'night_falls': [
-            ['narrator', 'The sky turns purple, then deep blue.'],
-            ['narrator', 'Stars appear, one by one.']
+            ['narrator', 'Night falls.'],
+            ['narrator', 'Stars appear.']
         ],
         'mama_lullaby': [
-            ['mama', 'Sleep now, little ones.'],
-            ['mama', '♪ High above the forest deep... ♪'],
-            ['mama', '♪ Safe within our nest we sleep... ♪']
+            ['mama', 'Sleep now...'],
+            ['mama', '♪ Safe in our nest... ♪']
         ],
         'papa_watches': [
-            ['narrator', 'As you drift off...'],
-            ['narrator', "Papa doesn't sleep. He watches the sky."],
-            ['narrator', 'Something circles out there.']
+            ['narrator', 'Papa watches the sky.'],
+            ['narrator', 'Something is out there.']
         ],
         'day2_wake': [
-            ['bramble', 'Wake up wake up!'],
-            ['mama', 'Today we train your wings.']
+            ['bramble', 'Morning!'],
+            ['mama', 'Wing training today!']
         ],
         'mama_stretch': [
-            ['mama', 'Hold SPACE to stretch your wings!']
+            ['mama', 'Hold SPACE to stretch!']
         ],
         'stretch_done': [
-            ['mama', 'Wonderful! Getting stronger.'],
-            ['bramble', 'When can we FLY?!'],
-            ['mama', 'Patience. A few more days.']
+            ['mama', 'Stronger!'],
+            ['bramble', 'When do we fly?!'],
+            ['mama', 'Soon.']
         ],
         'papa_food_2': [
-            ['papa', 'Breakfast! Catch the bugs!']
+            ['papa', 'Catch the bugs!']
         ],
         'feeding_done': [
-            ['papa', 'Well done!'],
-            ['wren', 'Can we see the edge today?']
+            ['wren', 'Can we see outside?']
         ],
         'wren_edge': [
-            ['wren', 'Come see! Hop to the right!']
+            ['wren', 'Hop to the right!']
         ],
         'wren_someday': [
-            ['narrator', 'The world stretches before you. Endless.'],
-            ['wren', "Someday we'll fly out there..."]
+            ['narrator', 'The world is endless.'],
+            ['wren', 'Someday...']
         ],
         'bramble_tomorrow': [
-            ['bramble', "I'm flying TOMORROW!"],
-            ['mama', 'Bramble. Promise me you will wait.'],
-            ['bramble', '...Fine.']
+            ['bramble', 'Tomorrow I fly!'],
+            ['mama', 'Promise you will wait.'],
+            ['bramble', 'Fine.']
         ],
         'shadow_passes': [
-            ['narrator', 'A shadow passes. Large. Silent.']
+            ['narrator', 'A shadow passes.']
         ],
         'papa_shield': [
-            ['papa', 'DOWN! Under my wing!'],
-            ['narrator', 'Through feathers, you see it.'],
-            ['narrator', 'A great bird. Red tail. Sharp talons.']
+            ['papa', 'DOWN!'],
+            ['narrator', 'A great hawk circles.']
         ],
         'shadow_gone': [
-            ['narrator', 'The shadow passes.'],
-            ['papa', "It's gone. For now."],
-            ['bramble', 'What was that?!']
+            ['papa', 'Gone. For now.']
         ],
         'parents_look': [
-            ['narrator', 'Your parents exchange a look.'],
-            ['mama', 'Nothing to worry about.']
+            ['mama', 'It is nothing.']
         ],
         'asher_arrives': [
-            ['narrator', 'A dark shape lands nearby.'],
-            ['narrator', 'A crow. Old. Ragged.'],
+            ['narrator', 'An old crow lands.'],
             ['papa', 'Asher.']
         ],
         'papa_defensive': [
-            ['papa', 'What do you want, crow?'],
-            ['asher', 'I came to warn you.']
+            ['asher', 'I bring a warning.']
         ],
         'asher_speaks': [
-            ['asher', 'The little ones grow fast.'],
-            ['asher', 'This one is... different.']
+            ['asher', 'This one is different.']
         ],
         'asher_cryptic': [
             ['asher', 'Talon has returned.'],
-            ['asher', 'He remembers this tree.'],
-            ['asher', 'Teach them fast. Time runs short.'],
-            ['narrator', 'The crow disappears into the dusk.']
+            ['asher', 'Teach them fast.']
         ],
         'mama_dismiss': [
-            ['wren', 'What did he mean?'],
-            ['mama', "Old Asher sees danger everywhere."],
-            ['papa', "Let's rest."]
+            ['mama', 'He worries too much.']
         ],
         'night2_falls': [
-            ['narrator', 'Night falls. The darkness feels deeper.']
+            ['narrator', 'Night falls again.']
         ],
         'papa_awake': [
-            ['narrator', 'Papa stands guard against the stars.'],
-            ['narrator', 'You need to learn to fly.'],
+            ['narrator', 'You must learn to fly.'],
             ['narrator', 'Soon.']
         ]
     };
@@ -309,18 +285,17 @@
         x: 200, y: NEST_Y - 12,
         vx: 0, vy: 0,
         dir: 1, enabled: false, moved: false,
-        stretching: false, phase: 0,
+        stretching: false,
 
-        update(dt) {
+        update() {
             if (!this.enabled) return;
-            this.phase += dt * 0.005;
 
             if (!this.stretching) {
                 if (keys.left) { this.vx = -1.5; this.dir = -1; this.moved = true; }
                 else if (keys.right) { this.vx = 1.5; this.dir = 1; this.moved = true; }
                 else this.vx *= 0.8;
 
-                if (keys.spacePressed && this.y >= NEST_Y - 13) {
+                if (keys.justPressed && this.y >= NEST_Y - 13) {
                     this.vy = -3;
                     this.moved = true;
                 }
@@ -343,46 +318,46 @@
             const wingY = this.stretching ? -6 : -2;
 
             // Shadow
-            px.fillStyle = '#00000044';
-            drawPixelCircle(x, y + 6, 5, 2);
+            px.fillStyle = '#00000033';
+            px.fillRect(x - 5, y + 5, 10, 3);
 
             // Body
-            px.fillStyle = '#888899';
-            drawPixelCircle(x, y, 6, 5);
+            px.fillStyle = '#8888aa';
+            px.fillRect(x - 5, y - 4, 10, 8);
 
             // Belly
             px.fillStyle = '#ccbbaa';
-            drawPixelCircle(x + 1, y + 2, 4, 3);
+            px.fillRect(x - 3, y, 6, 4);
 
             // Wings
-            px.fillStyle = '#777788';
-            drawPixelCircle(x - 3, y + wingY, 4, 2);
-            drawPixelCircle(x + 3, y + wingY, 4, 2);
+            px.fillStyle = '#666688';
+            px.fillRect(x - 7, y + wingY, 4, 3);
+            px.fillRect(x + 3, y + wingY, 4, 3);
 
             // Head
-            px.fillStyle = '#888899';
-            drawPixelCircle(x + 4 * this.dir, y - 4, 5, 4);
+            px.fillStyle = '#8888aa';
+            px.fillRect(x + 2 * this.dir, y - 8, 6, 6);
 
             // Eye
-            px.fillStyle = '#ffffff';
-            px.fillRect(x + 5 * this.dir, y - 5, 2, 2);
-            px.fillStyle = '#000000';
-            px.fillRect(x + 6 * this.dir, y - 5, 1, 1);
+            px.fillStyle = '#fff';
+            px.fillRect(x + 4 * this.dir, y - 7, 2, 2);
+            px.fillStyle = '#000';
+            px.fillRect(x + 5 * this.dir, y - 7, 1, 1);
 
             // Beak
             px.fillStyle = '#ffcc00';
-            px.fillRect(x + 8 * this.dir, y - 4, 3 * this.dir, 2);
+            px.fillRect(x + 7 * this.dir, y - 6, 3, 2);
         }
     };
 
     // ============ NPCS ============
     const npcs = {};
     const NPC_DEFS = {
-        mama: { x: 170, y: NEST_Y - 16, color: '#885533', belly: '#ddaa77', dir: 1, type: 'adult' },
-        papa: { x: 230, y: NEST_Y - 16, color: '#664422', belly: '#cc9966', dir: -1, type: 'adult' },
+        mama: { x: 170, y: NEST_Y - 14, color: '#885533', belly: '#ddaa77', dir: 1, type: 'adult' },
+        papa: { x: 230, y: NEST_Y - 14, color: '#664422', belly: '#cc9966', dir: -1, type: 'adult' },
         wren: { x: 185, y: NEST_Y - 10, color: '#998877', belly: '#ccbbaa', dir: 1, type: 'chick' },
         bramble: { x: 215, y: NEST_Y - 10, color: '#887766', belly: '#bbaa99', dir: -1, type: 'chick' },
-        asher: { x: 300, y: NEST_Y - 40, color: '#222222', dir: -1, type: 'crow' }
+        asher: { x: 320, y: NEST_Y - 35, color: '#222222', dir: -1, type: 'crow' }
     };
 
     function spawnNPC(id, state) {
@@ -398,174 +373,241 @@
         Object.values(npcs).forEach(n => {
             const x = Math.floor(n.x);
             const y = Math.floor(n.y);
-            n.phase += 0.05;
+            n.phase = (n.phase || 0) + 0.1;
 
             if (n.state === 'sleep') {
                 px.fillStyle = n.color;
-                drawPixelCircle(x, y + 2, 6, 4);
-                px.fillStyle = '#ffffff55';
-                px.fillRect(x + 8, y - 4 + Math.sin(n.phase) * 2, 3, 3);
+                px.fillRect(x - 5, y, 10, 6);
+                px.fillStyle = '#ffffff66';
+                const zzY = y - 6 + Math.sin(n.phase) * 2;
+                px.fillRect(x + 8, zzY, 2, 2);
                 return;
             }
 
             if (n.state === 'racing') {
-                n.x += 1;
-                if (n.x > 250) n.x = 250;
+                n.x = Math.min(n.x + 0.8, 250);
             }
 
             if (n.type === 'adult') {
                 px.fillStyle = n.color;
-                drawPixelCircle(x, y, 9, 7);
+                px.fillRect(x - 8, y - 5, 16, 12);
                 px.fillStyle = n.belly;
-                drawPixelCircle(x + 2 * n.dir, y + 2, 5, 4);
+                px.fillRect(x - 4, y + 1, 10, 5);
                 px.fillStyle = n.color;
-                drawPixelCircle(x + 7 * n.dir, y - 5, 6, 5);
-                px.fillStyle = '#ffffff';
-                px.fillRect(x + 9 * n.dir, y - 6, 2, 2);
-                px.fillStyle = '#000000';
-                px.fillRect(x + 10 * n.dir, y - 6, 1, 1);
+                px.fillRect(x + 6 * n.dir, y - 10, 8, 8);
+                px.fillStyle = '#fff';
+                px.fillRect(x + 9 * n.dir, y - 9, 2, 2);
+                px.fillStyle = '#000';
+                px.fillRect(x + 10 * n.dir, y - 9, 1, 1);
                 px.fillStyle = '#ff8800';
-                px.fillRect(x + 12 * n.dir, y - 4, 4 * n.dir, 2);
+                px.fillRect(x + 12 * n.dir, y - 7, 4, 2);
             } else if (n.type === 'chick') {
                 px.fillStyle = n.color;
-                drawPixelCircle(x, y, 5, 4);
+                px.fillRect(x - 4, y - 3, 8, 7);
                 px.fillStyle = n.belly;
-                drawPixelCircle(x + 1 * n.dir, y + 1, 3, 2);
+                px.fillRect(x - 2, y, 5, 3);
                 px.fillStyle = n.color;
-                drawPixelCircle(x + 4 * n.dir, y - 3, 4, 3);
-                px.fillStyle = '#ffffff';
-                px.fillRect(x + 5 * n.dir, y - 4, 2, 2);
+                px.fillRect(x + 2 * n.dir, y - 7, 5, 5);
+                px.fillStyle = '#fff';
+                px.fillRect(x + 4 * n.dir, y - 6, 2, 2);
                 px.fillStyle = '#ffcc00';
-                px.fillRect(x + 7 * n.dir, y - 3, 2 * n.dir, 2);
+                px.fillRect(x + 6 * n.dir, y - 5, 3, 2);
             } else if (n.type === 'crow') {
-                px.fillStyle = '#111111';
-                drawPixelCircle(x, y, 10, 7);
-                drawPixelCircle(x + 8 * n.dir, y - 4, 6, 5);
-                px.fillStyle = '#444444';
-                px.fillRect(x + 10 * n.dir, y - 5, 2, 2);
-                px.fillStyle = '#333333';
-                px.fillRect(x + 13 * n.dir, y - 3, 5 * n.dir, 2);
+                px.fillStyle = '#111';
+                px.fillRect(x - 10, y - 5, 20, 12);
+                px.fillRect(x + 6 * n.dir, y - 10, 10, 8);
+                px.fillStyle = '#444';
+                px.fillRect(x + 10 * n.dir, y - 8, 2, 2);
+                px.fillStyle = '#333';
+                px.fillRect(x + 14 * n.dir, y - 6, 5, 2);
             }
         });
     }
 
     // ============ DIALOGUE ============
-    let dlgActive = false;
-    let dlgLines = [];
-    let dlgIdx = 0;
-    let dlgText = '';
-    let dlgTarget = '';
-    let dlgChar = 0;
-    let dlgWait = false;
-    let dlgCb = null;
-    let dlgTimer = 0;
+    let dlg = {
+        active: false,
+        lines: [],
+        idx: 0,
+        text: '',
+        full: '',
+        charIdx: 0,
+        waiting: false,
+        callback: null,
+        timer: 0
+    };
 
     const PORTRAITS = { pip: '🐣', mama: '🐦', papa: '🐦', wren: '🐥', bramble: '🐥', asher: '🦅', narrator: '✨' };
     const COLORS = { pip: '#a8e6cf', mama: '#ffb6c1', papa: '#87ceeb', wren: '#dda0dd', bramble: '#f0e68c', asher: '#778899', narrator: '#ffd93d' };
 
-    function startDialogue(id, cb) {
-        const d = DIALOGUES[id];
-        if (!d) { if (cb) cb(); return; }
-        dlgActive = true;
-        dlgLines = d;
-        dlgIdx = 0;
-        dlgCb = cb;
-        showLine();
+    function startDialogue(id, callback) {
+        const data = DIALOGUES[id];
+        if (!data || data.length === 0) {
+            if (callback) callback();
+            return;
+        }
+        dlg.active = true;
+        dlg.lines = data;
+        dlg.idx = 0;
+        dlg.callback = callback;
+        showCurrentLine();
     }
 
-    function showLine() {
-        if (dlgIdx >= dlgLines.length) { endDialogue(); return; }
-        const [speaker, text] = dlgLines[dlgIdx];
+    function showCurrentLine() {
+        if (dlg.idx >= dlg.lines.length) {
+            endDialogue();
+            return;
+        }
+        const [speaker, text] = dlg.lines[dlg.idx];
         document.getElementById('dialogue-portrait').textContent = PORTRAITS[speaker] || '?';
-        document.getElementById('dialogue-name').textContent = speaker === 'narrator' ? '' : speaker.charAt(0).toUpperCase() + speaker.slice(1);
-        document.getElementById('dialogue-name').style.color = COLORS[speaker] || '#fff';
-        dlgTarget = text;
-        dlgText = '';
-        dlgChar = 0;
-        dlgWait = false;
-        dlgTimer = 0;
+        const nameEl = document.getElementById('dialogue-name');
+        nameEl.textContent = speaker === 'narrator' ? '' : speaker.charAt(0).toUpperCase() + speaker.slice(1);
+        nameEl.style.color = COLORS[speaker] || '#fff';
+        dlg.full = text;
+        dlg.text = '';
+        dlg.charIdx = 0;
+        dlg.waiting = false;
+        dlg.timer = 0;
         document.getElementById('dialogue-container').classList.remove('hidden');
         document.getElementById('dialogue-continue').style.visibility = 'hidden';
+        document.getElementById('dialogue-text').textContent = '';
     }
 
     function updateDialogue(dt) {
-        if (!dlgActive) return;
-        dlgTimer += dt;
+        if (!dlg.active) return;
 
-        if (dlgChar < dlgTarget.length) {
-            if (dlgTimer > 30 || keys.spacePressed) {
-                dlgText += dlgTarget[dlgChar];
-                dlgChar++;
-                dlgTimer = 0;
-                document.getElementById('dialogue-text').textContent = dlgText;
-                if (keys.spacePressed) {
-                    dlgText = dlgTarget;
-                    dlgChar = dlgTarget.length;
-                    document.getElementById('dialogue-text').textContent = dlgText;
-                }
+        dlg.timer += dt;
+
+        // Typing effect
+        if (dlg.charIdx < dlg.full.length) {
+            if (dlg.timer > 40) {
+                dlg.text += dlg.full[dlg.charIdx];
+                dlg.charIdx++;
+                dlg.timer = 0;
+                document.getElementById('dialogue-text').textContent = dlg.text;
             }
-        } else if (!dlgWait) {
-            dlgWait = true;
+            // Skip on space
+            if (keys.justPressed) {
+                dlg.text = dlg.full;
+                dlg.charIdx = dlg.full.length;
+                document.getElementById('dialogue-text').textContent = dlg.text;
+            }
+        } else if (!dlg.waiting) {
+            dlg.waiting = true;
             document.getElementById('dialogue-continue').style.visibility = 'visible';
-        } else if (keys.spacePressed) {
-            dlgIdx++;
-            showLine();
+        } else if (keys.justPressed) {
+            dlg.idx++;
+            showCurrentLine();
         }
     }
 
     function endDialogue() {
-        dlgActive = false;
+        dlg.active = false;
         document.getElementById('dialogue-container').classList.add('hidden');
-        if (dlgCb) { dlgCb(); dlgCb = null; }
+        const cb = dlg.callback;
+        dlg.callback = null;
+        if (cb) cb();
     }
 
     // ============ SCENE RUNNER ============
-    let sceneId = null;
-    let sceneStep = 0;
-    let sceneDelay = 0;
-    let waitAction = null;
+    let scene = {
+        id: null,
+        step: 0,
+        delay: 0,
+        waitFor: null
+    };
     let food = null;
     let bugs = [];
     let shadowX = -100;
     let shadowOn = false;
 
     function runScene(id) {
-        sceneId = id;
-        sceneStep = 0;
-        sceneDelay = 0;
-        waitAction = null;
+        scene.id = id;
+        scene.step = 0;
+        scene.delay = 0;
+        scene.waitFor = null;
         nextStep();
     }
 
     function nextStep() {
-        const scene = SCENES[sceneId];
-        if (!scene || sceneStep >= scene.length) return;
-        const s = scene[sceneStep];
+        const sc = SCENES[scene.id];
+        if (!sc || scene.step >= sc.length) return;
+
+        const s = sc[scene.step];
         const cmd = s[0];
 
-        if (cmd === 'time') { game.time = s[1]; sceneStep++; nextStep(); }
-        else if (cmd === 'spawn') { spawnNPC(s[1], s[2]); sceneStep++; nextStep(); }
-        else if (cmd === 'state') { setNPCState(s[1], s[2]); sceneStep++; nextStep(); }
-        else if (cmd === 'remove') { removeNPC(s[1]); sceneStep++; nextStep(); }
-        else if (cmd === 'player') { player.enabled = s[1]; sceneStep++; nextStep(); }
-        else if (cmd === 'talk') { startDialogue(s[1], () => { sceneStep++; nextStep(); }); }
-        else if (cmd === 'wait') { waitAction = s[1]; showHint(getHint(s[1])); }
-        else if (cmd === 'delay') { sceneDelay = s[1]; }
-        else if (cmd === 'food') { food = { x: 200, y: NEST_Y - 8 }; sceneStep++; nextStep(); }
-        else if (cmd === 'game') { startMini(s[1]); }
-        else if (cmd === 'shadow') { shadowOn = true; shadowX = -50; sceneStep++; nextStep(); }
-        else if (cmd === 'goto') { runScene(s[1]); }
-        else if (cmd === 'end') { endDay(s[1]); }
+        switch (cmd) {
+            case 'time':
+                game.time = s[1];
+                scene.step++;
+                nextStep();
+                break;
+            case 'spawn':
+                spawnNPC(s[1], s[2]);
+                scene.step++;
+                nextStep();
+                break;
+            case 'state':
+                setNPCState(s[1], s[2]);
+                scene.step++;
+                nextStep();
+                break;
+            case 'remove':
+                removeNPC(s[1]);
+                scene.step++;
+                nextStep();
+                break;
+            case 'player':
+                player.enabled = s[1];
+                scene.step++;
+                nextStep();
+                break;
+            case 'talk':
+                startDialogue(s[1], function() {
+                    scene.step++;
+                    nextStep();
+                });
+                break;
+            case 'wait':
+                scene.waitFor = s[1];
+                showHint(getHint(s[1]));
+                break;
+            case 'delay':
+                scene.delay = s[1];
+                break;
+            case 'food':
+                food = { x: 200, y: NEST_Y - 8 };
+                scene.step++;
+                nextStep();
+                break;
+            case 'game':
+                startMini(s[1]);
+                break;
+            case 'shadow':
+                shadowOn = true;
+                shadowX = -50;
+                scene.step++;
+                nextStep();
+                break;
+            case 'goto':
+                runScene(s[1]);
+                break;
+            case 'end':
+                endDay(s[1]);
+                break;
+        }
     }
 
     function getHint(a) {
-        if (a === 'move') return 'Use ARROW KEYS to hop';
-        if (a === 'eat') return 'Go to food, press SPACE';
-        if (a === 'goRight') return 'Hop to the RIGHT';
-        if (a === 'race') return 'Race to the RIGHT!';
-        if (a === 'stretch') return 'Hold SPACE to stretch!';
-        if (a === 'bugs') return 'Catch bugs with SPACE!';
-        return '';
+        const hints = {
+            move: 'ARROW KEYS to hop',
+            eat: 'Go to food + SPACE',
+            goRight: 'Hop RIGHT',
+            race: 'Race RIGHT!',
+            stretch: 'Hold SPACE!',
+            bugs: 'Catch bugs + SPACE'
+        };
+        return hints[a] || '';
     }
 
     function showHint(t) {
@@ -578,84 +620,104 @@
     }
 
     function startMini(g) {
-        if (g === 'race') { setNPCState('bramble', 'racing'); waitAction = 'race'; showHint('Race to the RIGHT!'); }
-        else if (g === 'stretch') { waitAction = 'stretch'; showHint('Hold SPACE!'); }
-        else if (g === 'bugs') {
+        if (g === 'race') {
+            setNPCState('bramble', 'racing');
+            scene.waitFor = 'race';
+            showHint('Race RIGHT!');
+        } else if (g === 'stretch') {
+            scene.waitFor = 'stretch';
+            showHint('Hold SPACE!');
+        } else if (g === 'bugs') {
             bugs = [];
-            for (let i = 0; i < 3; i++) bugs.push({ x: 150 + Math.random() * 100, y: NEST_Y - 10, got: false });
-            waitAction = 'bugs';
-            showHint('Catch bugs with SPACE!');
+            for (let i = 0; i < 3; i++) {
+                bugs.push({ x: 150 + Math.random() * 100, y: NEST_Y - 10, got: false });
+            }
+            scene.waitFor = 'bugs';
+            showHint('SPACE to catch!');
         }
     }
 
     function updateScene(dt) {
-        if (sceneDelay > 0) {
-            sceneDelay -= dt;
-            if (sceneDelay <= 0) { sceneStep++; nextStep(); }
+        // Handle delays
+        if (scene.delay > 0) {
+            scene.delay -= dt;
+            if (scene.delay <= 0) {
+                scene.step++;
+                nextStep();
+            }
+            return;
         }
 
-        if (waitAction) {
+        // Handle wait conditions
+        if (scene.waitFor) {
             let done = false;
-            if (waitAction === 'move' && player.moved) done = true;
-            if (waitAction === 'eat' && food && keys.spacePressed && Math.abs(player.x - food.x) < 20) {
-                food = null; done = true;
+
+            if (scene.waitFor === 'move' && player.moved) {
+                done = true;
             }
-            if (waitAction === 'goRight' && player.x > 245) done = true;
-            if (waitAction === 'race' && player.x > 245) { setNPCState('bramble', 'idle'); done = true; }
-            if (waitAction === 'stretch' && player.stretching) {
-                game.wingStrength += 0.3;
-                if (game.wingStrength >= 25) done = true;
+            if (scene.waitFor === 'eat' && food && keys.justPressed && Math.abs(player.x - food.x) < 25) {
+                food = null;
+                done = true;
             }
-            if (waitAction === 'bugs') {
+            if (scene.waitFor === 'goRight' && player.x > 245) {
+                done = true;
+            }
+            if (scene.waitFor === 'race' && player.x > 245) {
+                setNPCState('bramble', 'idle');
+                done = true;
+            }
+            if (scene.waitFor === 'stretch' && player.stretching) {
+                game.wingStrength += 0.5;
+                if (game.wingStrength >= 30) done = true;
+            }
+            if (scene.waitFor === 'bugs') {
                 let left = 0;
                 bugs.forEach(b => {
                     if (!b.got) {
                         left++;
-                        if (keys.spacePressed && Math.abs(player.x - b.x) < 15) b.got = true;
+                        if (keys.justPressed && Math.abs(player.x - b.x) < 20) {
+                            b.got = true;
+                        }
                     }
                 });
-                if (left === 0) { bugs = []; done = true; }
+                if (left === 0) {
+                    bugs = [];
+                    done = true;
+                }
             }
-            if (done) { hideHint(); waitAction = null; sceneStep++; nextStep(); }
+
+            if (done) {
+                hideHint();
+                scene.waitFor = null;
+                scene.step++;
+                nextStep();
+            }
         }
 
+        // Shadow animation
         if (shadowOn) {
-            shadowX += 4;
+            shadowX += 3;
             if (shadowX > WIDTH + 50) shadowOn = false;
         }
     }
 
     function endDay(d) {
-        let msg = d === 1
-            ? 'Day 1 Complete<br><br>Pip grows stronger.<br>But something watches...'
-            : 'Day 2 Complete<br><br>The shadow will return.<br><br><i>To be continued...</i>';
+        const msg = d === 1
+            ? 'Day 1 Complete<br><br>Pip grows stronger.<br>Something watches...'
+            : 'Day 2 Complete<br><br>The shadow returns.<br><br><i>To be continued...</i>';
         document.getElementById('end-message').innerHTML = msg;
         document.getElementById('end-chapter-screen').classList.remove('hidden');
-    }
-
-    // ============ DRAWING HELPERS ============
-    function drawPixelCircle(cx, cy, rx, ry) {
-        px.beginPath();
-        for (let a = 0; a < Math.PI * 2; a += 0.1) {
-            const x = cx + Math.cos(a) * rx;
-            const y = cy + Math.sin(a) * ry;
-            if (a === 0) px.moveTo(Math.floor(x), Math.floor(y));
-            else px.lineTo(Math.floor(x), Math.floor(y));
-        }
-        px.closePath();
-        px.fill();
     }
 
     // ============ RENDER ============
     const SKY = {
         dawn: ['#4a3066', '#ff9a56'],
-        day: ['#6699cc', '#aaddee'],
+        day: ['#5588bb', '#99ccee'],
         dusk: ['#2d1b4e', '#ff6b6b'],
-        night: ['#0a0a1a', '#1a1a3a']
+        night: ['#080810', '#101020']
     };
 
     function render() {
-        // Clear
         px.fillStyle = '#000';
         px.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -667,71 +729,68 @@
         px.fillStyle = grad;
         px.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Stars at night
+        // Stars
         if (game.time === 'night') {
-            px.fillStyle = '#ffffff';
-            for (let i = 0; i < 30; i++) {
-                px.fillRect((i * 37) % WIDTH, (i * 23) % 100, 1, 1);
+            px.fillStyle = '#fff';
+            for (let i = 0; i < 20; i++) {
+                px.fillRect((i * 47 + 13) % WIDTH, (i * 31 + 7) % 80, 1, 1);
             }
         }
 
         // Sun/Moon
         if (game.time === 'day' || game.time === 'dawn') {
             px.fillStyle = '#ffdd44';
-            drawPixelCircle(330, 40, 15, 15);
+            px.fillRect(320, 30, 20, 20);
         } else if (game.time === 'night') {
-            px.fillStyle = '#dddddd';
-            drawPixelCircle(330, 40, 12, 12);
+            px.fillStyle = '#ddd';
+            px.fillRect(320, 30, 16, 16);
         }
 
-        // Far mountains
-        px.fillStyle = game.time === 'night' ? '#1a1a2e' : '#7799aa';
+        // Mountains
+        px.fillStyle = game.time === 'night' ? '#151525' : '#667788';
         px.beginPath();
-        px.moveTo(0, 230);
-        for (let x = 0; x <= WIDTH; x += 20) px.lineTo(x, 200 + Math.sin(x * 0.05) * 15);
+        px.moveTo(0, 240);
+        for (let x = 0; x <= WIDTH; x += 30) {
+            px.lineTo(x, 200 + Math.sin(x * 0.05) * 20);
+        }
         px.lineTo(WIDTH, HEIGHT);
         px.lineTo(0, HEIGHT);
         px.fill();
 
         // Forest
-        px.fillStyle = game.time === 'night' ? '#0d1a0d' : '#335544';
-        px.beginPath();
-        px.moveTo(0, 240);
-        for (let x = 0; x <= WIDTH; x += 15) {
-            px.lineTo(x, 230 - 10 - Math.sin(x * 0.1) * 8);
-            px.lineTo(x + 7, 230);
+        px.fillStyle = game.time === 'night' ? '#0a150a' : '#334433';
+        for (let x = 0; x < WIDTH; x += 20) {
+            const h = 15 + Math.sin(x * 0.2) * 8;
+            px.fillRect(x, 230 - h, 15, h + 10);
         }
-        px.lineTo(WIDTH, HEIGHT);
-        px.lineTo(0, HEIGHT);
-        px.fill();
 
         // Tree trunk
-        px.fillStyle = '#3d2817';
-        px.fillRect(40, 100, 30, 200);
+        px.fillStyle = '#3a2515';
+        px.fillRect(40, 100, 25, 150);
 
         // Branch
         px.fillStyle = '#4a3520';
-        px.fillRect(60, 195, 300, 12);
+        px.fillRect(55, 195, 320, 10);
 
         // Nest
         px.fillStyle = '#5a4030';
-        drawPixelCircle(200, NEST_Y + 5, 55, 20);
+        px.fillRect(145, NEST_Y, 110, 25);
         px.fillStyle = '#6b5040';
-        drawPixelCircle(200, NEST_Y, 50, 15);
+        px.fillRect(150, NEST_Y - 5, 100, 15);
         px.fillStyle = '#7a6550';
-        drawPixelCircle(200, NEST_Y - 3, 40, 12);
+        px.fillRect(155, NEST_Y - 8, 90, 10);
 
         // Food
         if (food) {
-            px.fillStyle = '#ff8888';
-            px.fillRect(food.x - 4, food.y, 8, 3);
+            px.fillStyle = '#ff6666';
+            px.fillRect(food.x - 4, food.y, 8, 4);
         }
 
         // Bugs
         bugs.forEach(b => {
             if (!b.got) {
-                px.fillStyle = '#44cc44';
-                px.fillRect(b.x - 2, b.y - 2, 4, 4);
+                px.fillStyle = '#44dd44';
+                px.fillRect(b.x - 2, b.y - 2, 5, 5);
             }
         });
 
@@ -743,45 +802,43 @@
 
         // Shadow
         if (shadowOn) {
-            px.fillStyle = '#00000066';
+            px.fillStyle = '#00000055';
             px.beginPath();
-            px.moveTo(shadowX, 150);
-            px.lineTo(shadowX - 30, 175);
-            px.lineTo(shadowX - 15, 170);
-            px.lineTo(shadowX - 40, 190);
-            px.lineTo(shadowX, 175);
-            px.lineTo(shadowX + 40, 190);
-            px.lineTo(shadowX + 15, 170);
-            px.lineTo(shadowX + 30, 175);
+            px.moveTo(shadowX, 140);
+            px.lineTo(shadowX - 25, 165);
+            px.lineTo(shadowX - 35, 185);
+            px.lineTo(shadowX, 165);
+            px.lineTo(shadowX + 35, 185);
+            px.lineTo(shadowX + 25, 165);
             px.closePath();
             px.fill();
         }
 
-        // Scale up to main canvas
+        // Scale to main canvas
         ctx.drawImage(pxCanvas, 0, 0, WIDTH, HEIGHT, 0, 0, 800, 600);
     }
 
     // ============ UI ============
     function updateUI() {
-        document.getElementById('day-indicator').textContent = 'Day ' + game.day;
-        document.getElementById('wing-fill').style.width = (game.wingStrength) + '%';
+        document.getElementById('day-indicator').textContent = 'DAY ' + game.day;
+        document.getElementById('wing-fill').style.width = game.wingStrength + '%';
     }
 
     // ============ GAME LOOP ============
-    let last = 0;
-    function loop(t) {
-        const dt = Math.min(t - last, 50);
-        last = t;
+    let lastTime = 0;
+    function loop(time) {
+        const dt = Math.min(time - lastTime, 50);
+        lastTime = time;
 
         if (game.playing) {
             updateScene(dt);
-            player.update(dt);
+            player.update();
             updateDialogue(dt);
             render();
             updateUI();
         }
 
-        keys.spacePressed = false;
+        keys.justPressed = false;
         requestAnimationFrame(loop);
     }
 
@@ -791,7 +848,7 @@
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
         if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
         if (e.code === 'Space') {
-            if (!keys.space) keys.spacePressed = true;
+            if (!keys.space) keys.justPressed = true;
             keys.space = true;
             e.preventDefault();
         }
@@ -804,29 +861,29 @@
     });
 
     // ============ START ============
-    document.getElementById('start-btn').addEventListener('click', () => {
+    document.getElementById('start-btn').addEventListener('click', function() {
         document.getElementById('title-screen').classList.add('hidden');
         game.playing = true;
         game.day = 1;
 
-        document.getElementById('chapter-day').textContent = 'Day 1';
-        document.getElementById('chapter-title').textContent = 'Awakening';
+        document.getElementById('chapter-day').textContent = 'DAY 1';
+        document.getElementById('chapter-title').textContent = 'AWAKENING';
         document.getElementById('chapter-screen').classList.remove('hidden');
 
-        setTimeout(() => {
+        setTimeout(function() {
             document.getElementById('chapter-screen').classList.add('hidden');
             runScene('day1_awakening');
         }, 2000);
     });
 
-    document.getElementById('continue-btn').addEventListener('click', () => {
+    document.getElementById('continue-btn').addEventListener('click', function() {
         document.getElementById('end-chapter-screen').classList.add('hidden');
         if (game.day === 1) {
             game.day = 2;
-            document.getElementById('chapter-day').textContent = 'Day 2';
-            document.getElementById('chapter-title').textContent = 'Growing';
+            document.getElementById('chapter-day').textContent = 'DAY 2';
+            document.getElementById('chapter-title').textContent = 'GROWING';
             document.getElementById('chapter-screen').classList.remove('hidden');
-            setTimeout(() => {
+            setTimeout(function() {
                 document.getElementById('chapter-screen').classList.add('hidden');
                 runScene('day2_morning');
             }, 2000);

@@ -1,21 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-@font-face {
-    font-family: 'PixelFont';
-    src: local('Courier New');
-}
-
 body {
-    background: #1a1a2e;
+    background: #0a0a0a;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    font-family: 'Courier New', monospace;
+    font-family: 'Press Start 2P', monospace;
     overflow: hidden;
 }
 
@@ -23,16 +20,16 @@ body {
     position: relative;
     width: 800px;
     height: 600px;
-    border-radius: 4px;
+    border: 4px solid #333;
     overflow: hidden;
-    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
 
 #gameCanvas {
     display: block;
-    background: #2d1b4e;
+    background: #1a1a2e;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
@@ -51,56 +48,49 @@ body {
 }
 
 #day-indicator {
-    font-size: 14px;
+    font-size: 10px;
     color: #fff;
-    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    text-shadow: 2px 2px 0 #000;
+    letter-spacing: 1px;
 }
 
 #stats-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 }
 
 .stat-label {
-    font-size: 10px;
+    font-size: 8px;
     color: #ffd93d;
     text-shadow: 1px 1px 0 #000;
-    text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 .stat-bar {
     width: 80px;
-    height: 8px;
-    background: #333;
-    border: 2px solid #555;
-    margin-top: 2px;
+    height: 10px;
+    background: #222;
+    border: 2px solid #444;
 }
 
 #wing-fill {
     height: 100%;
     width: 10%;
-    background: linear-gradient(to right, #a8e6cf, #88d8b0);
-    transition: width 0.3s ease;
+    background: #44aa44;
 }
 
 /* Dialogue System */
 #dialogue-container {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
-    height: 140px;
-    background: linear-gradient(to bottom, #2d2d44, #1e1e32);
-    border: 4px solid #4a4a6a;
-    border-radius: 4px;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    height: 120px;
+    background: #111;
+    border: 4px solid #444;
     display: flex;
     padding: 12px;
-    gap: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    gap: 12px;
     z-index: 100;
 }
 
@@ -109,16 +99,15 @@ body {
 }
 
 #dialogue-portrait {
-    width: 100px;
-    height: 100px;
-    background: #3d3d5c;
-    border: 3px solid #5a5a7a;
-    border-radius: 4px;
+    width: 80px;
+    height: 80px;
+    background: #222;
+    border: 2px solid #555;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px;
+    font-size: 36px;
 }
 
 #dialogue-content {
@@ -129,18 +118,17 @@ body {
 }
 
 #dialogue-name {
-    font-size: 16px;
+    font-size: 10px;
     font-weight: bold;
     color: #ffd93d;
-    text-shadow: 2px 2px 0 #000;
+    text-shadow: 1px 1px 0 #000;
     margin-bottom: 8px;
-    letter-spacing: 1px;
 }
 
 #dialogue-text {
-    font-size: 14px;
-    color: #e8e8e8;
-    line-height: 1.6;
+    font-size: 10px;
+    color: #ddd;
+    line-height: 1.8;
     text-shadow: 1px 1px 0 #000;
     flex: 1;
 }
@@ -150,13 +138,13 @@ body {
     bottom: 0;
     right: 0;
     color: #ffd93d;
-    animation: bounce 0.8s infinite;
-    font-size: 16px;
+    animation: blink 0.5s infinite;
+    font-size: 12px;
 }
 
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(4px); }
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 /* Screens */
@@ -179,12 +167,7 @@ body {
 
 /* Title Screen */
 #title-screen {
-    background: linear-gradient(to bottom,
-        #1a0a2e 0%,
-        #2d1b4e 30%,
-        #4a3066 60%,
-        #1a0a2e 100%
-    );
+    background: #0a0a0a;
 }
 
 .title-content {
@@ -192,81 +175,61 @@ body {
 }
 
 .title-bird {
-    font-size: 72px;
-    margin-bottom: 10px;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    font-size: 64px;
+    margin-bottom: 20px;
 }
 
 #title-screen h1 {
-    font-size: 56px;
+    font-size: 32px;
     color: #ffd93d;
-    text-shadow: 4px 4px 0 #000, 0 0 40px rgba(255, 217, 61, 0.3);
-    letter-spacing: 8px;
-    margin-bottom: 0;
+    text-shadow: 4px 4px 0 #000;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
 }
 
 #title-screen h2 {
-    font-size: 24px;
-    color: #a8e6cf;
+    font-size: 14px;
+    color: #88cc88;
     text-shadow: 2px 2px 0 #000;
-    letter-spacing: 6px;
-    margin-top: 5px;
+    letter-spacing: 3px;
     font-weight: normal;
 }
 
 .tagline {
-    font-size: 14px;
-    color: #8888aa;
+    font-size: 8px;
+    color: #666;
     margin-top: 30px;
-    font-style: italic;
 }
 
 #title-screen button, #end-chapter-screen button {
     margin-top: 40px;
-    padding: 16px 48px;
-    font-size: 18px;
-    font-family: 'Courier New', monospace;
-    background: linear-gradient(to bottom, #5a8f5a, #3d6b3d);
+    padding: 16px 32px;
+    font-size: 12px;
+    font-family: 'Press Start 2P', monospace;
+    background: #228822;
     color: #fff;
-    border: 3px solid #7ab87a;
-    border-bottom-color: #2d4d2d;
-    border-right-color: #2d4d2d;
+    border: 4px solid #44aa44;
     cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 3px;
     text-shadow: 2px 2px 0 #000;
-    transition: transform 0.1s;
 }
 
 #title-screen button:hover, #end-chapter-screen button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(to bottom, #6ba06b, #4a7a4a);
+    background: #33aa33;
 }
 
 #title-screen button:active, #end-chapter-screen button:active {
-    transform: scale(0.98);
+    transform: translateY(2px);
 }
 
 .controls-hint {
     margin-top: 40px;
-    font-size: 12px;
-    color: #666688;
+    font-size: 8px;
+    color: #555;
 }
 
 /* Chapter Screen */
 #chapter-screen {
-    background: rgba(0, 0, 0, 0.95);
-    animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    background: #000;
 }
 
 .chapter-content {
@@ -274,23 +237,22 @@ body {
 }
 
 #chapter-day {
-    font-size: 18px;
-    color: #888;
+    font-size: 12px;
+    color: #666;
     letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 #chapter-title {
-    font-size: 36px;
+    font-size: 24px;
     color: #ffd93d;
     text-shadow: 3px 3px 0 #000;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
 }
 
 /* End Chapter Screen */
 #end-chapter-screen {
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
 }
 
 .end-content {
@@ -298,55 +260,26 @@ body {
 }
 
 #end-message {
-    font-size: 20px;
-    color: #a8e6cf;
-    line-height: 2;
-    max-width: 500px;
+    font-size: 12px;
+    color: #88cc88;
+    line-height: 2.5;
     text-shadow: 2px 2px 0 #000;
-}
-
-/* Mini-game overlay styles */
-.minigame-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    padding: 30px;
-    border-radius: 8px;
-    border: 3px solid #4a4a6a;
-    text-align: center;
-    z-index: 150;
-}
-
-.minigame-title {
-    font-size: 24px;
-    color: #ffd93d;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 0 #000;
-}
-
-.minigame-instruction {
-    font-size: 14px;
-    color: #aaa;
-    margin-bottom: 15px;
 }
 
 /* Action Hint */
 #action-hint {
     position: absolute;
-    bottom: 180px;
+    bottom: 150px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
+    background: #000;
     color: #ffd93d;
-    padding: 12px 24px;
-    border-radius: 4px;
-    border: 2px solid #ffd93d;
-    font-size: 14px;
+    padding: 12px 20px;
+    border: 3px solid #ffd93d;
+    font-size: 10px;
     z-index: 90;
     text-align: center;
-    animation: pulse 1.5s infinite;
+    animation: pulse 1s infinite;
 }
 
 #action-hint.hidden {
@@ -355,7 +288,7 @@ body {
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50% { opacity: 0.6; }
 }
 
 /* Responsive */
@@ -364,5 +297,13 @@ body {
         width: 100vw;
         height: 75vw;
         max-height: 100vh;
+    }
+
+    #title-screen h1 {
+        font-size: 20px;
+    }
+
+    #dialogue-text, #dialogue-name {
+        font-size: 8px;
     }
 }
