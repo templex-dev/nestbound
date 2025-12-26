@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nestbound - Learn to Fly</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay">
+            <div id="score-display">
+                <span id="food-count">🌾 0</span>
+                <span id="distance">📏 0m</span>
+            </div>
+            <div id="stamina-bar">
+                <div id="stamina-fill"></div>
+            </div>
+            <div id="growth-indicator"></div>
+        </div>
+        <div id="start-screen" class="screen">
+            <h1>🐦 Nestbound</h1>
+            <p>Start as a small bird, learn to fly, and survive!</p>
+            <div class="controls-info">
+                <p><strong>Controls:</strong></p>
+                <p>⬆️ SPACE / W / ↑ - Flap wings</p>
+                <p>⬅️➡️ A/D or ←/→ - Move left/right</p>
+                <p>⬇️ S or ↓ - Dive</p>
+            </div>
+            <button id="start-btn">Start Flying!</button>
+        </div>
+        <div id="game-over-screen" class="screen hidden">
+            <h1>Game Over</h1>
+            <p id="final-score"></p>
+            <p id="death-reason"></p>
+            <button id="restart-btn">Try Again</button>
+        </div>
+        <div id="tutorial-overlay" class="hidden">
+            <div id="tutorial-text"></div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
