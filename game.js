@@ -1,20 +1,16 @@
-// Nestbound: First Flight
-// ========================
-
+// Nestbound: First Flight - Enhanced Edition
 (function() {
     'use strict';
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // PIXEL ART: Render at half size, scale up 2x
     const WIDTH = 400;
     const HEIGHT = 300;
     canvas.width = 800;
     canvas.height = 600;
     ctx.imageSmoothingEnabled = false;
 
-    // Offscreen canvas for pixel rendering
     const pxCanvas = document.createElement('canvas');
     pxCanvas.width = WIDTH;
     pxCanvas.height = HEIGHT;
@@ -25,154 +21,368 @@
     const NEST_LEFT = 140;
     const NEST_RIGHT = 260;
 
-    // Game state
     const game = {
         playing: false,
         day: 1,
         time: 'dawn',
-        wingStrength: 10
+        wingStrength: 10,
+        hunger: 100,
+        energy: 100
     };
 
-    const keys = { left: false, right: false, up: false, space: false, justPressed: false };
+    const keys = { left: false, right: false, up: false, space: false, spaceJustPressed: false, enter: false, enterJustPressed: false };
 
-    // ============ DIALOGUE DATA ============
+    // Particles for visual polish
+    const particles = [];
+    function addParticle(x, y, type) {
+        particles.push({ x, y, type, life: 60, vx: (Math.random() - 0.5) * 2, vy: -Math.random() * 2 });
+    }
+    function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05;
+            p.life--;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+    function drawParticles() {
+        particles.forEach(p => {
+            const alpha = p.life / 60;
+            if (p.type === 'feather') {
+                px.fillStyle = `rgba(200,180,160,${alpha})`;
+                px.fillRect(p.x, p.y, 3, 2);
+            } else if (p.type === 'leaf') {
+                px.fillStyle = `rgba(100,150,80,${alpha})`;
+                px.fillRect(p.x, p.y, 4, 3);
+            } else if (p.type === 'sparkle') {
+                px.fillStyle = `rgba(255,255,200,${alpha})`;
+                px.fillRect(p.x, p.y, 2, 2);
+            } else if (p.type === 'heart') {
+                px.fillStyle = `rgba(255,150,150,${alpha})`;
+                px.fillRect(p.x, p.y, 3, 3);
+            }
+        });
+    }
+
+    // ============ EXPANDED DIALOGUES ============
     const DIALOGUES = {
         'hatching_1': [
             ['narrator', '...'],
-            ['narrator', 'Darkness. Warmth. A heartbeat.'],
-            ['narrator', 'Then... a crack.']
+            ['narrator', 'Darkness surrounds you.'],
+            ['narrator', 'But it is warm. Safe.'],
+            ['narrator', 'You hear a heartbeat. Is it yours?'],
+            ['narrator', 'Then... something changes.'],
+            ['narrator', 'A crack of light.']
         ],
         'hatching_2': [
-            ['narrator', 'You push. The shell breaks.'],
-            ['mama', 'There you are, little one.'],
-            ['mama', 'Welcome to the world, Pip.']
+            ['narrator', 'You push against the walls of your world.'],
+            ['narrator', 'They give way.'],
+            ['narrator', 'Light floods in. Blinding. Beautiful.'],
+            ['mama', 'Oh... oh my little one.'],
+            ['mama', 'There you are.'],
+            ['mama', 'Welcome to the world, Pip.'],
+            ['mama', 'I have waited so long to meet you.']
         ],
         'mama_intro': [
-            ['mama', 'This is our nest.'],
-            ['mama', 'Try hopping! Use ARROW KEYS.']
+            ['mama', 'This is our nest, little one.'],
+            ['mama', 'High in the great oak tree.'],
+            ['mama', 'You are safe here.'],
+            ['mama', 'Can you try moving? Use the ARROW KEYS.'],
+            ['mama', 'Just a little hop. You can do it.']
         ],
         'mama_good': [
-            ['mama', 'Good job!']
+            ['mama', 'Yes! Look at you!'],
+            ['mama', 'Such a brave little bird already.'],
+            ['narrator', 'Mama beams with pride.']
         ],
         'mama_siblings': [
-            ['mama', 'Your siblings, Wren and Bramble.'],
-            ['mama', 'They are still resting.']
+            ['mama', 'Come, let me show you something.'],
+            ['narrator', 'Two small shapes huddle nearby.'],
+            ['mama', 'These are your siblings.'],
+            ['mama', 'Wren, your sister. She hatched yesterday.'],
+            ['mama', 'And Bramble, your brother. Always so energetic.'],
+            ['mama', 'They are resting now. Growing takes energy.']
         ],
         'mama_rest': [
-            ['mama', 'Rest now. Grow strong.'],
-            ['mama', 'Papa will bring food soon.']
+            ['mama', 'You should rest too, little Pip.'],
+            ['mama', 'Close your eyes. Feel the warmth of the nest.'],
+            ['mama', 'Papa will return soon with food.'],
+            ['mama', 'He will be so happy to meet you.'],
+            ['narrator', 'Time passes. You drift in and out of sleep.']
         ],
         'papa_arrives': [
-            ['papa', "I'm back!"],
-            ['papa', 'Pip! You hatched!']
+            ['narrator', 'A rush of wings. A familiar scent.'],
+            ['papa', "I'm home!"],
+            ['narrator', 'A large bird lands on the branch.'],
+            ['papa', 'Is that... did the egg...?'],
+            ['mama', 'Come meet your child, dear.'],
+            ['papa', 'Pip! You hatched!'],
+            ['papa', 'Oh, look at those eyes. Just like your mother.'],
+            ['narrator', "Papa's voice cracks with emotion."]
         ],
         'papa_food': [
-            ['papa', 'Hungry? Go eat!'],
-            ['papa', 'Move to food, press SPACE.']
+            ['papa', 'You must be hungry, little one.'],
+            ['papa', "I brought something special. Your first meal!"],
+            ['narrator', 'Papa places food in the nest.'],
+            ['papa', 'Hop over to it and press SPACE to eat.'],
+            ['papa', 'Growing birds need their strength!']
         ],
         'papa_good': [
-            ['papa', 'Good!']
+            ['papa', "That's my Pip!"],
+            ['papa', 'You will grow big and strong.'],
+            ['mama', 'Just like your father.'],
+            ['narrator', 'Your parents share a warm look.']
         ],
         'papa_warning': [
-            ['papa', 'The forest was too quiet...'],
-            ['mama', 'Shh. Not now.']
+            ['narrator', "Papa's expression changes."],
+            ['papa', 'The forest was... quiet today.'],
+            ['papa', 'Too quiet.'],
+            ['mama', "...I'm sure it's nothing."],
+            ['papa', 'Perhaps. But we should be careful.'],
+            ['mama', 'Shh. Not in front of the children.'],
+            ['narrator', 'They exchange a worried glance.']
         ],
         'siblings_wake': [
-            ['bramble', '*yawn* Huh?'],
-            ['wren', 'Pip hatched!']
+            ['narrator', 'A small yawn breaks the silence.'],
+            ['bramble', '*yaaaawn* Wha... what happened?'],
+            ['wren', 'Bramble! Look! The egg!'],
+            ['bramble', 'Huh? OH!'],
+            ['wren', 'Pip hatched! Pip hatched!'],
+            ['bramble', "A new sibling! Finally, I'm not the youngest!"]
         ],
         'wren_intro': [
-            ['wren', "I'm Wren! Your sister!"]
+            ['wren', 'Hi Pip! I am Wren!'],
+            ['wren', 'I am your big sister now.'],
+            ['wren', 'I hatched a WHOLE day before you.'],
+            ['wren', 'So I know everything about the nest.'],
+            ['bramble', 'You do not!'],
+            ['wren', 'I know more than YOU, Bramble.']
         ],
         'bramble_intro': [
-            ['bramble', "I'm BRAMBLE!"],
-            ['bramble', 'Race me!']
+            ['bramble', 'Ignore her. I am BRAMBLE!'],
+            ['bramble', 'The fastest bird in this nest!'],
+            ['wren', "You've never even left the nest..."],
+            ['bramble', 'FASTEST IN THE NEST!'],
+            ['bramble', 'Hey Pip! Wanna see how fast I am?'],
+            ['bramble', 'Race me! First one to the right side wins!']
         ],
         'bramble_challenge': [
-            ['bramble', 'To the right! GO!']
+            ['bramble', 'Okay! On your marks...'],
+            ['bramble', 'Get set...'],
+            ['bramble', 'GO GO GO!']
         ],
-        'race_result': [
-            ['bramble', 'Fast!'],
-            ['mama', 'Time for bed.']
+        'race_win': [
+            ['bramble', 'WHAT?! No way!'],
+            ['bramble', 'You... you beat me?!'],
+            ['wren', 'Ha! Not so fast now, are you?'],
+            ['bramble', "I... I let Pip win! Because it's their first day!"],
+            ['mama', "That's very kind of you, Bramble."],
+            ['bramble', "...Yeah! That's it! I was being nice!"],
+            ['narrator', 'Bramble pouts slightly.']
+        ],
+        'race_lose': [
+            ['bramble', 'HA! I WIN!'],
+            ['bramble', 'Told you I was the fastest!'],
+            ['wren', 'Pip just hatched today, Bramble...'],
+            ['bramble', 'A win is a win!'],
+            ['mama', "You'll get faster, Pip. Don't worry."],
+            ['narrator', 'Bramble does a little victory hop.']
         ],
         'night_falls': [
-            ['narrator', 'Night falls.'],
-            ['narrator', 'Stars appear.']
+            ['narrator', 'The sky begins to change.'],
+            ['narrator', 'Orange fades to purple.'],
+            ['narrator', 'Purple surrenders to deep blue.'],
+            ['narrator', 'Stars appear, one by one.'],
+            ['wren', "It's so pretty..."],
+            ['bramble', 'I like the really bright one.'],
+            ['mama', "That's the North Star. It guides lost birds home."]
         ],
         'mama_lullaby': [
-            ['mama', 'Sleep now...'],
-            ['mama', '♪ Safe in our nest... ♪']
+            ['mama', 'Come now, little ones. Time for sleep.'],
+            ['bramble', "But I'm not tired!"],
+            ['mama', 'Growing birds need rest.'],
+            ['narrator', 'Mama gathers you all close.'],
+            ['mama', '♪ Hush now, little feathers... ♪'],
+            ['mama', '♪ Safe within our nest... ♪'],
+            ['mama', '♪ Dream of open skies... ♪'],
+            ['mama', '♪ Where you will fly your best... ♪'],
+            ['narrator', "Your eyes grow heavy. Mama's voice fades..."]
         ],
         'papa_watches': [
-            ['narrator', 'Papa watches the sky.'],
-            ['narrator', 'Something is out there.']
+            ['narrator', 'But Papa does not sleep.'],
+            ['narrator', 'He stands at the edge of the nest.'],
+            ['narrator', 'Watching. Waiting.'],
+            ['narrator', 'Something is out there.'],
+            ['narrator', 'Something that hunts in the dark.'],
+            ['narrator', 'Day 1 ends...']
         ],
+
+        // DAY 2
         'day2_wake': [
-            ['bramble', 'Morning!'],
-            ['mama', 'Wing training today!']
+            ['narrator', 'Morning light touches your feathers.'],
+            ['bramble', 'MORNING EVERYONE!'],
+            ['wren', 'Ugh... five more minutes...'],
+            ['bramble', 'No way! Today we train!'],
+            ['mama', 'Bramble is right, for once.'],
+            ['bramble', 'Hey!'],
+            ['mama', 'Today we begin wing exercises.'],
+            ['mama', "You're not ready to fly yet..."],
+            ['mama', 'But strong wings will save your life someday.']
         ],
         'mama_stretch': [
-            ['mama', 'Hold SPACE to stretch!']
+            ['mama', 'Watch me first.'],
+            ['narrator', 'Mama spreads her wings wide.'],
+            ['mama', 'Feel the stretch. The power.'],
+            ['mama', 'Now you try! Hold SPACE to stretch your wings.'],
+            ['mama', 'Keep holding until your wings feel strong!']
         ],
         'stretch_done': [
-            ['mama', 'Stronger!'],
-            ['bramble', 'When do we fly?!'],
-            ['mama', 'Soon.']
+            ['mama', 'Excellent! I can see you getting stronger!'],
+            ['bramble', 'When do we actually FLY?!'],
+            ['mama', 'Soon, Bramble. Patience.'],
+            ['bramble', "But I want to fly NOW!"],
+            ['wren', 'Flying looks scary...'],
+            ['papa', "It is scary. But it's also freedom."],
+            ['papa', 'One day, you will soar above the clouds.'],
+            ['papa', 'And you will never want to come down.']
         ],
         'papa_food_2': [
-            ['papa', 'Catch the bugs!']
+            ['papa', 'But first - breakfast!'],
+            ['papa', "I found some delicious bugs today."],
+            ['bramble', 'BUGS!'],
+            ['wren', 'I hope they are not too crunchy...'],
+            ['papa', "Let's make it fun. Catch as many as you can!"],
+            ['papa', 'Move to them and press SPACE!']
         ],
         'feeding_done': [
-            ['wren', 'Can we see outside?']
+            ['papa', 'Well done, everyone!'],
+            ['bramble', 'I caught the most!'],
+            ['wren', 'Did not!'],
+            ['papa', 'You all did wonderfully.'],
+            ['wren', 'Papa... what is out there?'],
+            ['wren', 'Beyond the nest?']
         ],
         'wren_edge': [
-            ['wren', 'Hop to the right!']
+            ['papa', 'Would you like to see?'],
+            ['papa', 'Hop to the right edge. Carefully now.'],
+            ['mama', 'Stay in the nest! Just look.']
         ],
         'wren_someday': [
-            ['narrator', 'The world is endless.'],
-            ['wren', 'Someday...']
+            ['narrator', 'You look out at the world.'],
+            ['narrator', 'It stretches endlessly.'],
+            ['narrator', 'Trees. Mountains. Rivers. Sky.'],
+            ['narrator', 'So much sky.'],
+            ['wren', 'It is... so big.'],
+            ['wren', 'Will we really fly out there?'],
+            ['mama', 'Someday. When you are ready.'],
+            ['wren', 'What if we are never ready?'],
+            ['mama', 'You will be. I promise.']
         ],
         'bramble_tomorrow': [
-            ['bramble', 'Tomorrow I fly!'],
-            ['mama', 'Promise you will wait.'],
-            ['bramble', 'Fine.']
+            ['bramble', "I'm ready NOW!"],
+            ['bramble', 'Tomorrow! Tomorrow I will fly!'],
+            ['papa', 'Bramble, no. You must wait.'],
+            ['bramble', 'But—'],
+            ['mama', 'Promise me. Promise you will wait.'],
+            ['narrator', 'Bramble looks at the endless sky.'],
+            ['bramble', '...Fine. I promise.'],
+            ['narrator', 'But something in his eyes says otherwise.']
         ],
         'shadow_passes': [
-            ['narrator', 'A shadow passes.']
+            ['narrator', 'Suddenly—'],
+            ['narrator', 'The light changes.'],
+            ['narrator', 'A darkness sweeps across the nest.'],
+            ['wren', 'W-what was that?!']
         ],
         'papa_shield': [
-            ['papa', 'DOWN!'],
-            ['narrator', 'A great hawk circles.']
+            ['papa', 'DOWN! Everyone down NOW!'],
+            ['narrator', 'Papa spreads his wings over you.'],
+            ['narrator', 'You peek through his feathers.'],
+            ['narrator', 'Above, circling...'],
+            ['narrator', 'A great hawk.'],
+            ['narrator', 'Its eyes scan the forest below.'],
+            ['narrator', 'Your heart pounds.']
         ],
         'shadow_gone': [
-            ['papa', 'Gone. For now.']
+            ['narrator', 'The shadow passes.'],
+            ['narrator', 'The hawk flies on.'],
+            ['papa', '...Gone. For now.'],
+            ['bramble', "What... what was that?"],
+            ['mama', 'Nothing. Just a bird passing by.'],
+            ['wren', "That didn't look like just a bird..."],
+            ['papa', "Don't worry. I will protect you. Always."]
         ],
         'parents_look': [
-            ['mama', 'It is nothing.']
+            ['narrator', 'Your parents exchange a look.'],
+            ['narrator', 'Fear? Worry? You cannot tell.'],
+            ['mama', 'It is nothing, little ones.'],
+            ['mama', 'Nothing at all.'],
+            ['narrator', 'But you notice Mama trembling slightly.']
         ],
         'asher_arrives': [
-            ['narrator', 'An old crow lands.'],
-            ['papa', 'Asher.']
+            ['narrator', 'As dusk falls, a visitor arrives.'],
+            ['narrator', 'An old crow, feathers weathered by time.'],
+            ['narrator', 'He lands on a branch nearby.'],
+            ['papa', 'Asher.'],
+            ['asher', 'Robin.'],
+            ['narrator', 'The crow nods slowly.'],
+            ['asher', 'It has been long.']
         ],
         'papa_defensive': [
-            ['asher', 'I bring a warning.']
+            ['papa', 'What brings you here?'],
+            ['asher', 'I bring a warning.'],
+            ['asher', 'One you will not want to hear.'],
+            ['mama', 'Speak plainly, old crow.']
         ],
         'asher_speaks': [
+            ['asher', 'I have watched the skies for sixty seasons.'],
+            ['asher', 'I have seen many hawks come and go.'],
+            ['asher', 'But this one...'],
             ['asher', 'This one is different.']
         ],
         'asher_cryptic': [
             ['asher', 'Talon has returned.'],
-            ['asher', 'Teach them fast.']
+            ['narrator', 'The name hits like cold wind.'],
+            ['mama', 'No... he left years ago...'],
+            ['asher', 'He is back. And he is hunting.'],
+            ['asher', 'Your nest is not safe.'],
+            ['papa', 'We can protect our children!'],
+            ['asher', 'Can you?'],
+            ['narrator', 'Silence. Heavy. Suffocating.'],
+            ['asher', 'Teach them to fly. Fast.'],
+            ['asher', 'It is their only chance.'],
+            ['narrator', 'The old crow spreads his wings.'],
+            ['asher', 'I have delivered my warning. Heed it.'],
+            ['narrator', 'And with that, he is gone.']
         ],
         'mama_dismiss': [
-            ['mama', 'He worries too much.']
+            ['bramble', "Who's Talon?"],
+            ['mama', 'No one important.'],
+            ['wren', "Mama, you're shaking..."],
+            ['mama', 'I said it is NOTHING!'],
+            ['narrator', '...'],
+            ['mama', "I... I'm sorry. I did not mean to yell."],
+            ['mama', 'Come. Let us rest.'],
+            ['narrator', 'But no one feels like resting anymore.']
         ],
         'night2_falls': [
-            ['narrator', 'Night falls again.']
+            ['narrator', 'Night falls on the second day.'],
+            ['narrator', 'The stars return, but they seem dimmer.'],
+            ['narrator', 'The wind feels colder.'],
+            ['narrator', 'Something has changed.']
         ],
         'papa_awake': [
+            ['narrator', 'Papa stands guard all night.'],
+            ['narrator', 'His eyes never leave the sky.'],
+            ['narrator', 'You pretend to sleep.'],
+            ['narrator', 'But you heard everything.'],
+            ['narrator', 'Talon.'],
+            ['narrator', 'The name echoes in your mind.'],
             ['narrator', 'You must learn to fly.'],
-            ['narrator', 'Soon.']
+            ['narrator', 'Soon.'],
+            ['narrator', 'Before it is too late.']
         ]
     };
 
@@ -184,98 +394,124 @@
             ['talk', 'hatching_1'],
             ['talk', 'hatching_2'],
             ['player', true],
+            ['delay', 500],
             ['talk', 'mama_intro'],
             ['wait', 'move'],
             ['talk', 'mama_good'],
+            ['delay', 800],
             ['spawn', 'wren', 'sleep'],
             ['spawn', 'bramble', 'sleep'],
             ['talk', 'mama_siblings'],
             ['talk', 'mama_rest'],
+            ['delay', 1500],
             ['goto', 'day1_feeding']
         ],
         'day1_feeding': [
             ['time', 'day'],
-            ['delay', 500],
+            ['delay', 800],
             ['spawn', 'papa'],
             ['talk', 'papa_arrives'],
+            ['delay', 500],
             ['food'],
             ['talk', 'papa_food'],
             ['wait', 'eat'],
             ['talk', 'papa_good'],
+            ['delay', 500],
             ['talk', 'papa_warning'],
+            ['delay', 1000],
             ['goto', 'day1_siblings']
         ],
         'day1_siblings': [
+            ['time', 'day'],
             ['state', 'wren', 'idle'],
             ['state', 'bramble', 'idle'],
+            ['delay', 500],
             ['talk', 'siblings_wake'],
             ['talk', 'wren_intro'],
+            ['delay', 300],
             ['talk', 'bramble_intro'],
             ['talk', 'bramble_challenge'],
             ['game', 'race'],
-            ['talk', 'race_result'],
+            ['delay', 800],
             ['goto', 'day1_night']
         ],
         'day1_night': [
             ['time', 'dusk'],
-            ['delay', 1000],
+            ['delay', 1500],
             ['time', 'night'],
-            ['state', 'all', 'sleep'],
             ['talk', 'night_falls'],
+            ['state', 'wren', 'sleep'],
+            ['state', 'bramble', 'sleep'],
+            ['delay', 800],
             ['talk', 'mama_lullaby'],
-            ['talk', 'papa_watches'],
             ['delay', 1000],
+            ['talk', 'papa_watches'],
+            ['delay', 1500],
             ['end', 1]
         ],
         'day2_morning': [
             ['time', 'dawn'],
             ['state', 'all', 'idle'],
+            ['delay', 500],
             ['talk', 'day2_wake'],
+            ['delay', 500],
             ['talk', 'mama_stretch'],
             ['game', 'stretch'],
             ['talk', 'stretch_done'],
+            ['delay', 500],
             ['goto', 'day2_competition']
         ],
         'day2_competition': [
             ['time', 'day'],
             ['talk', 'papa_food_2'],
             ['game', 'bugs'],
+            ['delay', 500],
             ['talk', 'feeding_done'],
             ['goto', 'day2_edge']
         ],
         'day2_edge': [
             ['talk', 'wren_edge'],
             ['wait', 'goRight'],
+            ['delay', 500],
             ['talk', 'wren_someday'],
+            ['delay', 500],
             ['talk', 'bramble_tomorrow'],
+            ['delay', 1000],
             ['goto', 'day2_shadow']
         ],
         'day2_shadow': [
-            ['delay', 500],
+            ['delay', 800],
             ['shadow'],
             ['talk', 'shadow_passes'],
             ['talk', 'papa_shield'],
+            ['delay', 2000],
             ['talk', 'shadow_gone'],
+            ['delay', 500],
             ['talk', 'parents_look'],
+            ['delay', 1000],
             ['goto', 'day2_asher']
         ],
         'day2_asher': [
             ['time', 'dusk'],
+            ['delay', 1000],
             ['spawn', 'asher'],
             ['talk', 'asher_arrives'],
             ['talk', 'papa_defensive'],
             ['talk', 'asher_speaks'],
             ['talk', 'asher_cryptic'],
             ['remove', 'asher'],
+            ['delay', 500],
             ['talk', 'mama_dismiss'],
+            ['delay', 1000],
             ['goto', 'day2_night']
         ],
         'day2_night': [
             ['time', 'night'],
             ['state', 'all', 'sleep'],
             ['talk', 'night2_falls'],
+            ['delay', 1500],
             ['talk', 'papa_awake'],
-            ['delay', 1000],
+            ['delay', 2000],
             ['end', 2]
         ]
     };
@@ -285,23 +521,30 @@
         x: 200, y: NEST_Y - 12,
         vx: 0, vy: 0,
         dir: 1, enabled: false, moved: false,
-        stretching: false,
+        stretching: false, stretchPower: 0,
 
         update() {
             if (!this.enabled) return;
+            if (dlg.active) return; // Don't move during dialogue
 
             if (!this.stretching) {
                 if (keys.left) { this.vx = -1.5; this.dir = -1; this.moved = true; }
                 else if (keys.right) { this.vx = 1.5; this.dir = 1; this.moved = true; }
                 else this.vx *= 0.8;
 
-                if (keys.justPressed && this.y >= NEST_Y - 13) {
-                    this.vy = -3;
+                if (keys.spaceJustPressed && this.y >= NEST_Y - 13) {
+                    this.vy = -3.5;
                     this.moved = true;
+                    addParticle(this.x, this.y + 4, 'feather');
                 }
             }
 
-            this.stretching = keys.space && this.y >= NEST_Y - 13;
+            this.stretching = keys.space && this.y >= NEST_Y - 13 && scene.waitFor === 'stretch';
+            if (this.stretching) {
+                this.stretchPower = Math.min(this.stretchPower + 1, 100);
+                if (Math.random() < 0.1) addParticle(this.x + (Math.random() - 0.5) * 10, this.y - 5, 'sparkle');
+            }
+
             this.vy += 0.2;
             this.x += this.vx;
             this.y += this.vy;
@@ -315,11 +558,12 @@
             if (!this.enabled) return;
             const x = Math.floor(this.x);
             const y = Math.floor(this.y);
-            const wingY = this.stretching ? -6 : -2;
+            const wingY = this.stretching ? -8 - Math.sin(Date.now() * 0.02) * 2 : -2;
+            const wingSpread = this.stretching ? 4 : 0;
 
             // Shadow
             px.fillStyle = '#00000033';
-            px.fillRect(x - 5, y + 5, 10, 3);
+            px.fillRect(x - 5, NEST_Y - 5, 10, 3);
 
             // Body
             px.fillStyle = '#8888aa';
@@ -331,8 +575,8 @@
 
             // Wings
             px.fillStyle = '#666688';
-            px.fillRect(x - 7, y + wingY, 4, 3);
-            px.fillRect(x + 3, y + wingY, 4, 3);
+            px.fillRect(x - 7 - wingSpread, y + wingY, 4 + wingSpread, 3);
+            px.fillRect(x + 3, y + wingY, 4 + wingSpread, 3);
 
             // Head
             px.fillStyle = '#8888aa';
@@ -347,6 +591,14 @@
             // Beak
             px.fillStyle = '#ffcc00';
             px.fillRect(x + 7 * this.dir, y - 6, 3, 2);
+
+            // Stretch meter
+            if (this.stretching) {
+                px.fillStyle = '#333';
+                px.fillRect(x - 15, y - 20, 30, 4);
+                px.fillStyle = '#4CAF50';
+                px.fillRect(x - 14, y - 19, (this.stretchPower / 100) * 28, 2);
+            }
         }
     };
 
@@ -355,13 +607,13 @@
     const NPC_DEFS = {
         mama: { x: 170, y: NEST_Y - 14, color: '#885533', belly: '#ddaa77', dir: 1, type: 'adult' },
         papa: { x: 230, y: NEST_Y - 14, color: '#664422', belly: '#cc9966', dir: -1, type: 'adult' },
-        wren: { x: 185, y: NEST_Y - 10, color: '#998877', belly: '#ccbbaa', dir: 1, type: 'chick' },
-        bramble: { x: 215, y: NEST_Y - 10, color: '#887766', belly: '#bbaa99', dir: -1, type: 'chick' },
+        wren: { x: 180, y: NEST_Y - 10, color: '#aa8899', belly: '#ddcccc', dir: 1, type: 'chick' },
+        bramble: { x: 220, y: NEST_Y - 10, color: '#887766', belly: '#bbaa99', dir: -1, type: 'chick' },
         asher: { x: 320, y: NEST_Y - 35, color: '#222222', dir: -1, type: 'crow' }
     };
 
     function spawnNPC(id, state) {
-        npcs[id] = { ...NPC_DEFS[id], state: state || 'idle', phase: Math.random() * 6 };
+        npcs[id] = { ...NPC_DEFS[id], state: state || 'idle', phase: Math.random() * 6, bobTimer: 0 };
     }
     function setNPCState(id, state) {
         if (id === 'all') Object.values(npcs).forEach(n => n.state = state);
@@ -370,61 +622,92 @@
     function removeNPC(id) { delete npcs[id]; }
 
     function drawNPCs() {
-        Object.values(npcs).forEach(n => {
+        Object.entries(npcs).forEach(([id, n]) => {
+            n.bobTimer = (n.bobTimer || 0) + 0.1;
+            const bob = n.state === 'idle' ? Math.sin(n.bobTimer) * 1 : 0;
             const x = Math.floor(n.x);
-            const y = Math.floor(n.y);
+            const y = Math.floor(n.y + bob);
             n.phase = (n.phase || 0) + 0.1;
 
             if (n.state === 'sleep') {
                 px.fillStyle = n.color;
-                px.fillRect(x - 5, y, 10, 6);
-                px.fillStyle = '#ffffff66';
-                const zzY = y - 6 + Math.sin(n.phase) * 2;
+                px.fillRect(x - 5, y + 2, 10, 6);
+                // Zzz
+                px.fillStyle = '#ffffff88';
+                const zzY = y - 4 + Math.sin(n.phase) * 2;
                 px.fillRect(x + 8, zzY, 2, 2);
+                px.fillRect(x + 11, zzY - 3, 3, 3);
                 return;
             }
 
             if (n.state === 'racing') {
-                n.x = Math.min(n.x + 0.8, 250);
+                n.x = Math.min(n.x + 1.2 + Math.random() * 0.5, 255);
             }
 
             if (n.type === 'adult') {
+                // Shadow
+                px.fillStyle = '#00000022';
+                px.fillRect(x - 7, NEST_Y - 3, 14, 3);
+                // Body
                 px.fillStyle = n.color;
                 px.fillRect(x - 8, y - 5, 16, 12);
                 px.fillStyle = n.belly;
                 px.fillRect(x - 4, y + 1, 10, 5);
                 px.fillStyle = n.color;
                 px.fillRect(x + 6 * n.dir, y - 10, 8, 8);
+                // Wing detail
+                px.fillStyle = n.color === '#885533' ? '#774422' : '#553311';
+                px.fillRect(x - 7, y - 2, 3, 6);
+                px.fillRect(x + 4, y - 2, 3, 6);
+                // Eye
                 px.fillStyle = '#fff';
-                px.fillRect(x + 9 * n.dir, y - 9, 2, 2);
+                px.fillRect(x + 9 * n.dir, y - 9, 3, 3);
                 px.fillStyle = '#000';
-                px.fillRect(x + 10 * n.dir, y - 9, 1, 1);
+                px.fillRect(x + 10 * n.dir, y - 8, 1, 1);
+                // Beak
                 px.fillStyle = '#ff8800';
                 px.fillRect(x + 12 * n.dir, y - 7, 4, 2);
             } else if (n.type === 'chick') {
+                // Shadow
+                px.fillStyle = '#00000022';
+                px.fillRect(x - 4, NEST_Y - 3, 8, 2);
+                // Body
                 px.fillStyle = n.color;
                 px.fillRect(x - 4, y - 3, 8, 7);
                 px.fillStyle = n.belly;
                 px.fillRect(x - 2, y, 5, 3);
                 px.fillStyle = n.color;
                 px.fillRect(x + 2 * n.dir, y - 7, 5, 5);
+                // Eye
                 px.fillStyle = '#fff';
                 px.fillRect(x + 4 * n.dir, y - 6, 2, 2);
+                px.fillStyle = '#000';
+                px.fillRect(x + 4 * n.dir + (n.dir > 0 ? 1 : 0), y - 6, 1, 1);
+                // Beak
                 px.fillStyle = '#ffcc00';
                 px.fillRect(x + 6 * n.dir, y - 5, 3, 2);
             } else if (n.type === 'crow') {
-                px.fillStyle = '#111';
-                px.fillRect(x - 10, y - 5, 20, 12);
-                px.fillRect(x + 6 * n.dir, y - 10, 10, 8);
-                px.fillStyle = '#444';
-                px.fillRect(x + 10 * n.dir, y - 8, 2, 2);
+                // Big old crow
+                px.fillStyle = '#0a0a0a';
+                px.fillRect(x - 12, y - 6, 24, 14);
+                px.fillRect(x + 8 * n.dir, y - 12, 12, 10);
+                // Weathered feathers
+                px.fillStyle = '#1a1a1a';
+                px.fillRect(x - 10, y - 3, 4, 8);
+                px.fillRect(x + 6, y - 3, 4, 8);
+                // Eye - wise, old
+                px.fillStyle = '#666';
+                px.fillRect(x + 12 * n.dir, y - 10, 3, 3);
                 px.fillStyle = '#333';
-                px.fillRect(x + 14 * n.dir, y - 6, 5, 2);
+                px.fillRect(x + 13 * n.dir, y - 9, 1, 1);
+                // Beak
+                px.fillStyle = '#222';
+                px.fillRect(x + 18 * n.dir, y - 8, 6, 3);
             }
         });
     }
 
-    // ============ DIALOGUE ============
+    // ============ DIALOGUE (Enter/Click to advance) ============
     let dlg = {
         active: false,
         lines: [],
@@ -473,6 +756,24 @@
         document.getElementById('dialogue-text').textContent = '';
     }
 
+    function advanceDialogue() {
+        if (!dlg.active) return;
+
+        // If still typing, complete the line
+        if (dlg.charIdx < dlg.full.length) {
+            dlg.text = dlg.full;
+            dlg.charIdx = dlg.full.length;
+            document.getElementById('dialogue-text').textContent = dlg.text;
+            dlg.waiting = true;
+            document.getElementById('dialogue-continue').style.visibility = 'visible';
+        }
+        // If waiting, go to next line
+        else if (dlg.waiting) {
+            dlg.idx++;
+            showCurrentLine();
+        }
+    }
+
     function updateDialogue(dt) {
         if (!dlg.active) return;
 
@@ -480,24 +781,15 @@
 
         // Typing effect
         if (dlg.charIdx < dlg.full.length) {
-            if (dlg.timer > 40) {
+            if (dlg.timer > 35) {
                 dlg.text += dlg.full[dlg.charIdx];
                 dlg.charIdx++;
                 dlg.timer = 0;
                 document.getElementById('dialogue-text').textContent = dlg.text;
             }
-            // Skip on space
-            if (keys.justPressed) {
-                dlg.text = dlg.full;
-                dlg.charIdx = dlg.full.length;
-                document.getElementById('dialogue-text').textContent = dlg.text;
-            }
         } else if (!dlg.waiting) {
             dlg.waiting = true;
             document.getElementById('dialogue-continue').style.visibility = 'visible';
-        } else if (keys.justPressed) {
-            dlg.idx++;
-            showCurrentLine();
         }
     }
 
@@ -510,16 +802,12 @@
     }
 
     // ============ SCENE RUNNER ============
-    let scene = {
-        id: null,
-        step: 0,
-        delay: 0,
-        waitFor: null
-    };
+    let scene = { id: null, step: 0, delay: 0, waitFor: null };
     let food = null;
     let bugs = [];
     let shadowX = -100;
     let shadowOn = false;
+    let raceResult = null;
 
     function runScene(id) {
         scene.id = id;
@@ -576,7 +864,7 @@
                 scene.delay = s[1];
                 break;
             case 'food':
-                food = { x: 200, y: NEST_Y - 8 };
+                food = { x: 200, y: NEST_Y - 8, bobTimer: 0 };
                 scene.step++;
                 nextStep();
                 break;
@@ -585,7 +873,7 @@
                 break;
             case 'shadow':
                 shadowOn = true;
-                shadowX = -50;
+                shadowX = -80;
                 scene.step++;
                 nextStep();
                 break;
@@ -600,12 +888,12 @@
 
     function getHint(a) {
         const hints = {
-            move: 'ARROW KEYS to hop',
-            eat: 'Go to food + SPACE',
-            goRight: 'Hop RIGHT',
-            race: 'Race RIGHT!',
-            stretch: 'Hold SPACE!',
-            bugs: 'Catch bugs + SPACE'
+            move: '← → ARROW KEYS to hop around!',
+            eat: 'Hop to food + SPACE to eat!',
+            goRight: 'Hop to the RIGHT edge →',
+            race: 'RACE! Mash → to beat Bramble!',
+            stretch: 'HOLD SPACE to stretch wings!',
+            bugs: 'Catch bugs! Move + SPACE!'
         };
         return hints[a] || '';
     }
@@ -621,19 +909,29 @@
 
     function startMini(g) {
         if (g === 'race') {
+            npcs.bramble.x = 185;
+            player.x = 175;
             setNPCState('bramble', 'racing');
             scene.waitFor = 'race';
-            showHint('Race RIGHT!');
+            raceResult = null;
+            showHint('RACE! Mash → to beat Bramble!');
         } else if (g === 'stretch') {
+            player.stretchPower = 0;
             scene.waitFor = 'stretch';
-            showHint('Hold SPACE!');
+            showHint('HOLD SPACE to stretch wings!');
         } else if (g === 'bugs') {
             bugs = [];
-            for (let i = 0; i < 3; i++) {
-                bugs.push({ x: 150 + Math.random() * 100, y: NEST_Y - 10, got: false });
+            for (let i = 0; i < 6; i++) {
+                bugs.push({
+                    x: 150 + Math.random() * 100,
+                    y: NEST_Y - 8 - Math.random() * 8,
+                    got: false,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    type: Math.random() < 0.3 ? 'big' : 'small'
+                });
             }
             scene.waitFor = 'bugs';
-            showHint('SPACE to catch!');
+            showHint('Catch bugs! Move + SPACE!');
         }
     }
 
@@ -655,28 +953,55 @@
             if (scene.waitFor === 'move' && player.moved) {
                 done = true;
             }
-            if (scene.waitFor === 'eat' && food && keys.justPressed && Math.abs(player.x - food.x) < 25) {
+            if (scene.waitFor === 'eat' && food && keys.spaceJustPressed && Math.abs(player.x - food.x) < 25) {
+                for (let i = 0; i < 5; i++) addParticle(food.x, food.y, 'heart');
                 food = null;
                 done = true;
             }
-            if (scene.waitFor === 'goRight' && player.x > 245) {
+            if (scene.waitFor === 'goRight' && player.x > 250) {
                 done = true;
             }
-            if (scene.waitFor === 'race' && player.x > 245) {
-                setNPCState('bramble', 'idle');
-                done = true;
+            if (scene.waitFor === 'race') {
+                // Check race end
+                if (player.x >= 250 || (npcs.bramble && npcs.bramble.x >= 255)) {
+                    const playerWon = player.x >= npcs.bramble.x;
+                    setNPCState('bramble', 'idle');
+                    npcs.bramble.x = 220;
+                    player.x = 190;
+                    raceResult = playerWon;
+                    hideHint();
+                    scene.waitFor = null;
+                    scene.step++;
+                    // Show appropriate dialogue
+                    startDialogue(playerWon ? 'race_win' : 'race_lose', function() {
+                        nextStep();
+                    });
+                    return;
+                }
             }
-            if (scene.waitFor === 'stretch' && player.stretching) {
-                game.wingStrength += 0.5;
-                if (game.wingStrength >= 30) done = true;
+            if (scene.waitFor === 'stretch') {
+                if (player.stretchPower >= 100) {
+                    game.wingStrength = Math.min(game.wingStrength + 15, 100);
+                    for (let i = 0; i < 10; i++) addParticle(player.x, player.y - 5, 'sparkle');
+                    done = true;
+                }
             }
             if (scene.waitFor === 'bugs') {
                 let left = 0;
                 bugs.forEach(b => {
                     if (!b.got) {
+                        // Bugs move around
+                        b.x += b.vx;
+                        if (b.x < 150 || b.x > 250) b.vx *= -1;
+                        b.y += Math.sin(Date.now() * 0.01 + b.x) * 0.3;
+                        if (b.y < NEST_Y - 20) b.y = NEST_Y - 20;
+                        if (b.y > NEST_Y - 5) b.y = NEST_Y - 5;
+
                         left++;
-                        if (keys.justPressed && Math.abs(player.x - b.x) < 20) {
+                        if (keys.spaceJustPressed && Math.abs(player.x - b.x) < 18 && Math.abs(player.y - b.y) < 15) {
                             b.got = true;
+                            for (let i = 0; i < 3; i++) addParticle(b.x, b.y, 'sparkle');
+                            game.hunger = Math.min(game.hunger + 10, 100);
                         }
                     }
                 });
@@ -696,15 +1021,20 @@
 
         // Shadow animation
         if (shadowOn) {
-            shadowX += 3;
-            if (shadowX > WIDTH + 50) shadowOn = false;
+            shadowX += 2;
+            if (shadowX > WIDTH + 100) shadowOn = false;
+        }
+
+        // Update food bob
+        if (food) {
+            food.bobTimer = (food.bobTimer || 0) + 0.1;
         }
     }
 
     function endDay(d) {
         const msg = d === 1
-            ? 'Day 1 Complete<br><br>Pip grows stronger.<br>Something watches...'
-            : 'Day 2 Complete<br><br>The shadow returns.<br><br><i>To be continued...</i>';
+            ? '<div class="end-day">Day 1 Complete</div><br>Pip grows stronger.<br><br>But something watches from above...'
+            : '<div class="end-day">Day 2 Complete</div><br>Talon has returned.<br>The clock is ticking.<br><br><i>To be continued...</i>';
         document.getElementById('end-message').innerHTML = msg;
         document.getElementById('end-chapter-screen').classList.remove('hidden');
     }
@@ -716,6 +1046,8 @@
         dusk: ['#2d1b4e', '#ff6b6b'],
         night: ['#080810', '#101020']
     };
+
+    let ambientTimer = 0;
 
     function render() {
         px.fillStyle = '#000';
@@ -729,29 +1061,63 @@
         px.fillStyle = grad;
         px.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Stars
-        if (game.time === 'night') {
-            px.fillStyle = '#fff';
-            for (let i = 0; i < 20; i++) {
-                px.fillRect((i * 47 + 13) % WIDTH, (i * 31 + 7) % 80, 1, 1);
+        // Stars at night
+        if (game.time === 'night' || game.time === 'dusk') {
+            const starAlpha = game.time === 'night' ? 1 : 0.3;
+            px.fillStyle = `rgba(255,255,255,${starAlpha})`;
+            for (let i = 0; i < 30; i++) {
+                const twinkle = Math.sin(Date.now() * 0.003 + i) * 0.5 + 0.5;
+                if (twinkle > 0.3) {
+                    px.fillRect((i * 47 + 13) % WIDTH, (i * 31 + 7) % 100, 1, 1);
+                }
             }
         }
 
         // Sun/Moon
-        if (game.time === 'day' || game.time === 'dawn') {
-            px.fillStyle = '#ffdd44';
-            px.fillRect(320, 30, 20, 20);
+        if (game.time === 'day') {
+            px.fillStyle = '#ffee55';
+            px.fillRect(320, 25, 24, 24);
+            px.fillStyle = '#ffff88';
+            px.fillRect(322, 27, 20, 20);
+        } else if (game.time === 'dawn') {
+            px.fillStyle = '#ffaa44';
+            px.fillRect(50, 80, 20, 20);
+        } else if (game.time === 'dusk') {
+            px.fillStyle = '#ff6644';
+            px.fillRect(340, 70, 18, 18);
         } else if (game.time === 'night') {
-            px.fillStyle = '#ddd';
-            px.fillRect(320, 30, 16, 16);
+            px.fillStyle = '#ddeeff';
+            px.fillRect(320, 30, 18, 18);
+            px.fillStyle = '#080810';
+            px.fillRect(325, 28, 12, 12);
         }
 
-        // Mountains
+        // Clouds (daytime)
+        if (game.time === 'day' || game.time === 'dawn') {
+            px.fillStyle = 'rgba(255,255,255,0.6)';
+            const cloudX = (Date.now() * 0.01) % (WIDTH + 100) - 50;
+            px.fillRect(cloudX, 50, 30, 10);
+            px.fillRect(cloudX + 5, 45, 20, 8);
+            px.fillRect(cloudX + 100, 70, 25, 8);
+        }
+
+        // Distant mountains
         px.fillStyle = game.time === 'night' ? '#151525' : '#667788';
         px.beginPath();
         px.moveTo(0, 240);
-        for (let x = 0; x <= WIDTH; x += 30) {
-            px.lineTo(x, 200 + Math.sin(x * 0.05) * 20);
+        for (let x = 0; x <= WIDTH; x += 20) {
+            px.lineTo(x, 190 + Math.sin(x * 0.03) * 25 + Math.sin(x * 0.07) * 10);
+        }
+        px.lineTo(WIDTH, HEIGHT);
+        px.lineTo(0, HEIGHT);
+        px.fill();
+
+        // Closer hills
+        px.fillStyle = game.time === 'night' ? '#101820' : '#556655';
+        px.beginPath();
+        px.moveTo(0, 250);
+        for (let x = 0; x <= WIDTH; x += 15) {
+            px.lineTo(x, 220 + Math.sin(x * 0.05 + 1) * 15);
         }
         px.lineTo(WIDTH, HEIGHT);
         px.lineTo(0, HEIGHT);
@@ -759,40 +1125,81 @@
 
         // Forest
         px.fillStyle = game.time === 'night' ? '#0a150a' : '#334433';
-        for (let x = 0; x < WIDTH; x += 20) {
-            const h = 15 + Math.sin(x * 0.2) * 8;
-            px.fillRect(x, 230 - h, 15, h + 10);
+        for (let x = 0; x < WIDTH; x += 12) {
+            const h = 18 + Math.sin(x * 0.15) * 8 + Math.sin(x * 0.3) * 4;
+            px.fillRect(x, 235 - h, 10, h + 15);
         }
 
         // Tree trunk
         px.fillStyle = '#3a2515';
-        px.fillRect(40, 100, 25, 150);
+        px.fillRect(35, 90, 30, 170);
+        // Bark texture
+        px.fillStyle = '#2a1a0a';
+        px.fillRect(40, 100, 3, 20);
+        px.fillRect(50, 130, 4, 15);
+        px.fillRect(38, 170, 3, 25);
 
         // Branch
         px.fillStyle = '#4a3520';
-        px.fillRect(55, 195, 320, 10);
+        px.fillRect(55, 192, 320, 14);
+        px.fillStyle = '#3a2510';
+        px.fillRect(55, 200, 320, 6);
 
-        // Nest
+        // Leaves on branch
+        px.fillStyle = game.time === 'night' ? '#1a2a1a' : '#4a6a3a';
+        px.fillRect(50, 185, 15, 10);
+        px.fillRect(280, 183, 20, 12);
+        px.fillRect(350, 186, 18, 10);
+
+        // Nest - more detailed
         px.fillStyle = '#5a4030';
-        px.fillRect(145, NEST_Y, 110, 25);
+        px.fillRect(142, NEST_Y + 2, 116, 28);
         px.fillStyle = '#6b5040';
-        px.fillRect(150, NEST_Y - 5, 100, 15);
+        px.fillRect(147, NEST_Y - 3, 106, 18);
         px.fillStyle = '#7a6550';
-        px.fillRect(155, NEST_Y - 8, 90, 10);
+        px.fillRect(152, NEST_Y - 7, 96, 12);
+        // Nest texture
+        px.fillStyle = '#4a3020';
+        for (let i = 0; i < 8; i++) {
+            px.fillRect(150 + i * 12, NEST_Y - 5 + (i % 3) * 2, 8, 2);
+        }
+
+        // Ambient leaves falling
+        ambientTimer++;
+        if (game.time === 'day' || game.time === 'dawn') {
+            if (ambientTimer % 120 === 0) {
+                addParticle(Math.random() * WIDTH, -10, 'leaf');
+            }
+        }
 
         // Food
         if (food) {
+            const foodBob = Math.sin(food.bobTimer) * 2;
             px.fillStyle = '#ff6666';
-            px.fillRect(food.x - 4, food.y, 8, 4);
+            px.fillRect(food.x - 5, food.y + foodBob, 10, 5);
+            px.fillStyle = '#ff4444';
+            px.fillRect(food.x - 3, food.y + 2 + foodBob, 6, 3);
+            // Glow
+            px.fillStyle = '#ff666633';
+            px.fillRect(food.x - 8, food.y - 3 + foodBob, 16, 11);
         }
 
         // Bugs
         bugs.forEach(b => {
             if (!b.got) {
-                px.fillStyle = '#44dd44';
-                px.fillRect(b.x - 2, b.y - 2, 5, 5);
+                const size = b.type === 'big' ? 6 : 4;
+                px.fillStyle = b.type === 'big' ? '#66dd66' : '#44bb44';
+                px.fillRect(b.x - size/2, b.y - size/2, size, size);
+                // Wings
+                px.fillStyle = '#88ff8866';
+                px.fillRect(b.x - size/2 - 2, b.y - 2, 2, 3);
+                px.fillRect(b.x + size/2, b.y - 2, 2, 3);
             }
         });
+
+        // Particles
+        updateParticles();
+        drawParticles();
 
         // NPCs
         drawNPCs();
@@ -800,16 +1207,19 @@
         // Player
         player.draw();
 
-        // Shadow
+        // Shadow (hawk)
         if (shadowOn) {
-            px.fillStyle = '#00000055';
+            px.fillStyle = '#00000066';
+            // More menacing hawk shape
             px.beginPath();
             px.moveTo(shadowX, 140);
-            px.lineTo(shadowX - 25, 165);
-            px.lineTo(shadowX - 35, 185);
-            px.lineTo(shadowX, 165);
-            px.lineTo(shadowX + 35, 185);
-            px.lineTo(shadowX + 25, 165);
+            px.lineTo(shadowX - 30, 160);
+            px.lineTo(shadowX - 45, 180);
+            px.lineTo(shadowX - 20, 165);
+            px.lineTo(shadowX, 170);
+            px.lineTo(shadowX + 20, 165);
+            px.lineTo(shadowX + 45, 180);
+            px.lineTo(shadowX + 30, 160);
             px.closePath();
             px.fill();
         }
@@ -838,26 +1248,41 @@
             updateUI();
         }
 
-        keys.justPressed = false;
+        keys.spaceJustPressed = false;
+        keys.enterJustPressed = false;
         requestAnimationFrame(loop);
     }
 
     // ============ INPUT ============
-    document.addEventListener('keydown', e => {
+    document.addEventListener('keydown', function(e) {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
         if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
         if (e.code === 'Space') {
-            if (!keys.space) keys.justPressed = true;
+            if (!keys.space) keys.spaceJustPressed = true;
             keys.space = true;
             e.preventDefault();
         }
+        if (e.code === 'Enter') {
+            if (!keys.enter) {
+                keys.enterJustPressed = true;
+                advanceDialogue();
+            }
+            keys.enter = true;
+            e.preventDefault();
+        }
     });
-    document.addEventListener('keyup', e => {
+    document.addEventListener('keyup', function(e) {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
         if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
         if (e.code === 'Space') keys.space = false;
+        if (e.code === 'Enter') keys.enter = false;
+    });
+
+    // Click to advance dialogue
+    document.getElementById('dialogue-container').addEventListener('click', function() {
+        advanceDialogue();
     });
 
     // ============ START ============
@@ -873,7 +1298,7 @@
         setTimeout(function() {
             document.getElementById('chapter-screen').classList.add('hidden');
             runScene('day1_awakening');
-        }, 2000);
+        }, 2500);
     });
 
     document.getElementById('continue-btn').addEventListener('click', function() {
@@ -881,12 +1306,24 @@
         if (game.day === 1) {
             game.day = 2;
             document.getElementById('chapter-day').textContent = 'DAY 2';
-            document.getElementById('chapter-title').textContent = 'GROWING';
+            document.getElementById('chapter-title').textContent = 'GROWING WINGS';
             document.getElementById('chapter-screen').classList.remove('hidden');
             setTimeout(function() {
                 document.getElementById('chapter-screen').classList.add('hidden');
                 runScene('day2_morning');
-            }, 2000);
+            }, 2500);
+        } else {
+            // After Day 2, show "To be continued" and return to title
+            document.getElementById('title-screen').classList.remove('hidden');
+            game.playing = false;
+            // Reset for replay
+            game.day = 1;
+            game.wingStrength = 10;
+            player.x = 200;
+            player.y = NEST_Y - 12;
+            player.enabled = false;
+            player.moved = false;
+            Object.keys(npcs).forEach(k => delete npcs[k]);
         }
     });
 
