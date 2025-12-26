@@ -3,43 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nestbound - Learn to Fly</title>
+    <title>Nestbound: First Flight</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <!-- Dialogue Box -->
+        <div id="dialogue-container" class="hidden">
+            <div id="dialogue-portrait"></div>
+            <div id="dialogue-content">
+                <div id="dialogue-name"></div>
+                <div id="dialogue-text"></div>
+                <div id="dialogue-continue">▼</div>
+            </div>
+        </div>
+
+        <!-- UI Overlay -->
         <div id="ui-overlay">
-            <div id="score-display">
-                <span id="food-count">🌾 0</span>
-                <span id="distance">📏 0m</span>
+            <div id="day-indicator"></div>
+            <div id="stats-container">
+                <div id="wing-strength">
+                    <span class="stat-label">Wings</span>
+                    <div class="stat-bar"><div id="wing-fill"></div></div>
+                </div>
             </div>
-            <div id="stamina-bar">
-                <div id="stamina-fill"></div>
+        </div>
+
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen">
+            <div class="title-content">
+                <div class="title-bird">🐣</div>
+                <h1>Nestbound</h1>
+                <h2>First Flight</h2>
+                <p class="tagline">A story of family, courage, and learning to fly</p>
+                <button id="start-btn">Begin</button>
+                <div class="controls-hint">
+                    <p>Arrow Keys to move • Space to interact</p>
+                </div>
             </div>
-            <div id="growth-indicator"></div>
         </div>
-        <div id="start-screen" class="screen">
-            <h1>🐦 Nestbound</h1>
-            <p>Start as a small bird, learn to fly, and survive!</p>
-            <div class="controls-info">
-                <p><strong>Controls:</strong></p>
-                <p>⬆️ SPACE / W / ↑ - Flap wings</p>
-                <p>⬅️➡️ A/D or ←/→ - Move left/right</p>
-                <p>⬇️ S or ↓ - Dive</p>
+
+        <!-- Chapter Title -->
+        <div id="chapter-screen" class="screen hidden">
+            <div class="chapter-content">
+                <div id="chapter-day"></div>
+                <div id="chapter-title"></div>
             </div>
-            <button id="start-btn">Start Flying!</button>
         </div>
-        <div id="game-over-screen" class="screen hidden">
-            <h1>Game Over</h1>
-            <p id="final-score"></p>
-            <p id="death-reason"></p>
-            <button id="restart-btn">Try Again</button>
-        </div>
-        <div id="tutorial-overlay" class="hidden">
-            <div id="tutorial-text"></div>
+
+        <!-- End Chapter Screen -->
+        <div id="end-chapter-screen" class="screen hidden">
+            <div class="end-content">
+                <div id="end-message"></div>
+                <button id="continue-btn">Continue</button>
+            </div>
         </div>
     </div>
-    <script src="game.js"></script>
+
+    <script src="js/game.js" type="module"></script>
 </body>
 </html>
