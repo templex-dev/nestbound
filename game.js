@@ -383,6 +383,78 @@
             ['narrator', 'You must learn to fly.'],
             ['narrator', 'Soon.'],
             ['narrator', 'Before it is too late.']
+        ],
+
+        // RAT DIALOGUES
+        'rat_appears': [
+            ['narrator', 'A rustling in the branches below...'],
+            ['narrator', 'Something climbs up the tree.'],
+            ['narrator', 'A... rat?'],
+            ['narrator', 'And is that... a crown on its head?'],
+            ['rat', '*ahem* Greetings, young feathered one.'],
+            ['rat', 'I am Reginald. King of the Branch.'],
+            ['bramble', 'King of WHAT?!'],
+            ['wren', "There's a RAT in our TREE!"]
+        ],
+        'rat_intro': [
+            ['rat', 'Please, please. No need for alarm.'],
+            ['rat', 'I mean you no harm.'],
+            ['rat', "I am merely... a connoisseur of fine things."],
+            ['narrator', 'Reginald adjusts his tiny crown.'],
+            ['rat', 'I have heard whispers on the wind.'],
+            ['rat', 'Of a hawk. Of danger.'],
+            ['rat', 'And I thought... perhaps we could help each other.']
+        ],
+        'rat_offer': [
+            ['mama', 'Why would a rat help birds?'],
+            ['rat', 'Because, dear madam...'],
+            ['rat', 'Hawks eat rats too.'],
+            ['rat', 'The enemy of my enemy is my... acquaintance.'],
+            ['narrator', 'Reginald strokes his whiskers thoughtfully.'],
+            ['rat', 'I propose a trade.'],
+            ['rat', 'I have... misplaced some of my royal cheese.'],
+            ['rat', 'Scattered throughout this tree.'],
+            ['rat', 'Help me collect it, and I shall share wisdom.'],
+            ['rat', 'Wisdom that may save your feathers.']
+        ],
+        'rat_cheese_intro': [
+            ['rat', 'My precious cheese! It fell from my treasury!'],
+            ['rat', 'Collect them for me, little bird!'],
+            ['rat', 'Move to each cheese and press SPACE!'],
+            ['narrator', 'Reginald gestures dramatically.'],
+            ['rat', 'A king should not have to do manual labor!']
+        ],
+        'rat_cheese_done': [
+            ['rat', 'Magnificent! Glorious! My cheese!'],
+            ['narrator', 'Reginald hugs a wedge of cheese lovingly.'],
+            ['rat', 'You have the heart of a royal servant.'],
+            ['wren', "...Was that a compliment?"],
+            ['rat', 'The highest honor!'],
+            ['bramble', 'Weird rat...']
+        ],
+        'rat_wisdom': [
+            ['rat', 'Now then. My wisdom, as promised.'],
+            ['rat', 'The hawk - Talon - has a weakness.'],
+            ['narrator', "Everyone leans in."],
+            ['rat', 'He is proud. Arrogant.'],
+            ['rat', 'He always attacks from the sun.'],
+            ['rat', 'Keep the light in your eyes...'],
+            ['rat', 'And you will see him coming.'],
+            ['papa', '...That is actually useful.'],
+            ['rat', 'Of course it is. I am a KING.']
+        ],
+        'rat_farewell': [
+            ['rat', 'And now, I must return to my kingdom.'],
+            ['rat', 'The sewers await their sovereign.'],
+            ['wren', 'The... sewers?'],
+            ['rat', 'A palace of pipes! A throne of porcelain!'],
+            ['rat', 'You would not understand. Bird brains.'],
+            ['narrator', 'Reginald bows with a flourish.'],
+            ['rat', 'Until we meet again, feathered ones.'],
+            ['rat', 'May your flights be swift and your worms be juicy.'],
+            ['narrator', 'And with that, the Rat King descends.'],
+            ['bramble', '...What just happened?'],
+            ['mama', "I... I'm not entirely sure."]
         ]
     };
 
@@ -503,6 +575,26 @@
             ['delay', 500],
             ['talk', 'mama_dismiss'],
             ['delay', 1000],
+            ['goto', 'day2_rat']
+        ],
+        'day2_rat': [
+            ['time', 'dusk'],
+            ['delay', 800],
+            ['spawn', 'rat'],
+            ['talk', 'rat_appears'],
+            ['delay', 300],
+            ['talk', 'rat_intro'],
+            ['talk', 'rat_offer'],
+            ['delay', 500],
+            ['talk', 'rat_cheese_intro'],
+            ['game', 'cheese'],
+            ['delay', 500],
+            ['talk', 'rat_cheese_done'],
+            ['talk', 'rat_wisdom'],
+            ['delay', 500],
+            ['talk', 'rat_farewell'],
+            ['remove', 'rat'],
+            ['delay', 1000],
             ['goto', 'day2_night']
         ],
         'day2_night': [
@@ -609,7 +701,8 @@
         papa: { x: 230, y: NEST_Y - 14, color: '#664422', belly: '#cc9966', dir: -1, type: 'adult' },
         wren: { x: 180, y: NEST_Y - 10, color: '#aa8899', belly: '#ddcccc', dir: 1, type: 'chick' },
         bramble: { x: 220, y: NEST_Y - 10, color: '#887766', belly: '#bbaa99', dir: -1, type: 'chick' },
-        asher: { x: 320, y: NEST_Y - 35, color: '#222222', dir: -1, type: 'crow' }
+        asher: { x: 320, y: NEST_Y - 35, color: '#222222', dir: -1, type: 'crow' },
+        rat: { x: 280, y: NEST_Y - 8, color: '#5a4a3a', belly: '#8a7a6a', dir: -1, type: 'rat' }
     };
 
     function spawnNPC(id, state) {
@@ -703,6 +796,75 @@
                 // Beak
                 px.fillStyle = '#222';
                 px.fillRect(x + 18 * n.dir, y - 8, 6, 3);
+            } else if (n.type === 'rat') {
+                // Shadow
+                px.fillStyle = '#00000022';
+                px.fillRect(x - 8, NEST_Y - 3, 16, 3);
+
+                // Tail (long, curvy)
+                px.fillStyle = '#8a6a5a';
+                px.fillRect(x - 12 * n.dir, y + 2, 8, 2);
+                px.fillRect(x - 16 * n.dir, y + 1, 5, 2);
+                px.fillRect(x - 19 * n.dir, y - 1, 4, 2);
+
+                // Body (plump and round)
+                px.fillStyle = n.color;
+                px.fillRect(x - 7, y - 3, 14, 10);
+                px.fillRect(x - 5, y - 5, 10, 3);
+
+                // Belly
+                px.fillStyle = n.belly;
+                px.fillRect(x - 4, y + 1, 8, 5);
+
+                // Head
+                px.fillStyle = n.color;
+                px.fillRect(x + 5 * n.dir, y - 8, 8, 8);
+                px.fillRect(x + 8 * n.dir, y - 6, 4, 4); // snout
+
+                // Ears (big round rat ears)
+                px.fillStyle = '#6a5a4a';
+                px.fillRect(x + 3 * n.dir, y - 12, 4, 5);
+                px.fillRect(x + 8 * n.dir, y - 11, 4, 4);
+                // Inner ear pink
+                px.fillStyle = '#cc9999';
+                px.fillRect(x + 4 * n.dir, y - 11, 2, 3);
+                px.fillRect(x + 9 * n.dir, y - 10, 2, 2);
+
+                // Eye (beady and mischievous)
+                px.fillStyle = '#111';
+                px.fillRect(x + 8 * n.dir, y - 6, 3, 3);
+                px.fillStyle = '#fff';
+                px.fillRect(x + 9 * n.dir, y - 6, 1, 1);
+
+                // Nose
+                px.fillStyle = '#ff9999';
+                px.fillRect(x + 11 * n.dir, y - 4, 2, 2);
+
+                // Whiskers
+                px.fillStyle = '#aaa';
+                px.fillRect(x + 12 * n.dir, y - 5, 4, 1);
+                px.fillRect(x + 12 * n.dir, y - 3, 3, 1);
+                px.fillRect(x + 12 * n.dir, y - 1, 4, 1);
+
+                // CROWN! (The magnificent rat crown)
+                px.fillStyle = '#ffd700';
+                px.fillRect(x + 2 * n.dir, y - 16, 10, 4);
+                px.fillStyle = '#ffec00';
+                px.fillRect(x + 3 * n.dir, y - 18, 2, 3);
+                px.fillRect(x + 6 * n.dir, y - 19, 2, 4);
+                px.fillRect(x + 9 * n.dir, y - 18, 2, 3);
+                // Crown jewels
+                px.fillStyle = '#ff4444';
+                px.fillRect(x + 6 * n.dir, y - 17, 2, 2);
+                px.fillStyle = '#44ff44';
+                px.fillRect(x + 3 * n.dir, y - 15, 1, 1);
+                px.fillStyle = '#4444ff';
+                px.fillRect(x + 10 * n.dir, y - 15, 1, 1);
+
+                // Little paws
+                px.fillStyle = '#8a6a5a';
+                px.fillRect(x - 4, y + 5, 3, 2);
+                px.fillRect(x + 2, y + 5, 3, 2);
             }
         });
     }
@@ -720,8 +882,8 @@
         timer: 0
     };
 
-    const PORTRAITS = { pip: '🐣', mama: '🐦', papa: '🐦', wren: '🐥', bramble: '🐥', asher: '🦅', narrator: '✨' };
-    const COLORS = { pip: '#a8e6cf', mama: '#ffb6c1', papa: '#87ceeb', wren: '#dda0dd', bramble: '#f0e68c', asher: '#778899', narrator: '#ffd93d' };
+    const PORTRAITS = { pip: '🐣', mama: '🐦', papa: '🐦', wren: '🐥', bramble: '🐥', asher: '🦅', rat: '🐀', narrator: '✨' };
+    const COLORS = { pip: '#a8e6cf', mama: '#ffb6c1', papa: '#87ceeb', wren: '#dda0dd', bramble: '#f0e68c', asher: '#778899', rat: '#ffd700', narrator: '#ffd93d' };
 
     function startDialogue(id, callback) {
         const data = DIALOGUES[id];
@@ -805,6 +967,7 @@
     let scene = { id: null, step: 0, delay: 0, waitFor: null };
     let food = null;
     let bugs = [];
+    let cheese = [];
     let shadowX = -100;
     let shadowOn = false;
     let raceResult = null;
@@ -893,7 +1056,8 @@
             goRight: 'Hop to the RIGHT edge →',
             race: 'RACE! Mash → to beat Bramble!',
             stretch: 'HOLD SPACE to stretch wings!',
-            bugs: 'Catch bugs! Move + SPACE!'
+            bugs: 'Catch bugs! Move + SPACE!',
+            cheese: 'Collect royal cheese! Move + SPACE!'
         };
         return hints[a] || '';
     }
@@ -932,6 +1096,20 @@
             }
             scene.waitFor = 'bugs';
             showHint('Catch bugs! Move + SPACE!');
+        } else if (g === 'cheese') {
+            cheese = [];
+            // Royal cheese wedges scattered in the nest
+            for (let i = 0; i < 5; i++) {
+                cheese.push({
+                    x: 150 + i * 22 + Math.random() * 10,
+                    y: NEST_Y - 10 - Math.random() * 6,
+                    got: false,
+                    bobPhase: Math.random() * Math.PI * 2,
+                    size: Math.random() < 0.3 ? 'big' : 'small'
+                });
+            }
+            scene.waitFor = 'cheese';
+            showHint('Collect royal cheese! Move + SPACE!');
         }
     }
 
@@ -1007,6 +1185,25 @@
                 });
                 if (left === 0) {
                     bugs = [];
+                    done = true;
+                }
+            }
+            if (scene.waitFor === 'cheese') {
+                let left = 0;
+                cheese.forEach(c => {
+                    if (!c.got) {
+                        // Cheese bobs gently (it's royal cheese, it floats majestically)
+                        c.bobPhase += 0.05;
+                        left++;
+                        if (keys.spaceJustPressed && Math.abs(player.x - c.x) < 20 && Math.abs(player.y - (c.y + Math.sin(c.bobPhase) * 2)) < 18) {
+                            c.got = true;
+                            // Golden sparkles for royal cheese!
+                            for (let i = 0; i < 5; i++) addParticle(c.x, c.y, 'sparkle');
+                        }
+                    }
+                });
+                if (left === 0) {
+                    cheese = [];
                     done = true;
                 }
             }
@@ -1484,6 +1681,41 @@
                 const wingY = wingFlap ? -3 : -1;
                 px.fillRect(b.x - 1, b.y + wingY, 2, 2);
                 px.fillRect(b.x + size/2 - 1, b.y + wingY, 2, 2);
+            }
+        });
+
+        // Royal cheese wedges
+        cheese.forEach(c => {
+            if (!c.got) {
+                const bobY = Math.sin(c.bobPhase) * 2;
+                const size = c.size === 'big' ? 10 : 7;
+                const cx = Math.floor(c.x);
+                const cy = Math.floor(c.y + bobY);
+
+                // Cheese glow (it's royal after all)
+                px.fillStyle = '#ffd70022';
+                px.fillRect(cx - size - 2, cy - size/2 - 2, size * 2 + 4, size + 4);
+
+                // Cheese wedge - triangle-ish pixel art
+                px.fillStyle = '#ffdd44'; // Main cheese color
+                px.fillRect(cx - size/2, cy - size/2, size, size);
+                px.fillRect(cx - size/2 + 2, cy - size/2 - 2, size - 4, 2);
+
+                // Darker edge (rind)
+                px.fillStyle = '#ddaa22';
+                px.fillRect(cx - size/2, cy + size/2 - 2, size, 2);
+
+                // Cheese holes
+                px.fillStyle = '#cc9922';
+                px.fillRect(cx - 2, cy - 2, 3, 3);
+                if (c.size === 'big') {
+                    px.fillRect(cx + 3, cy + 1, 2, 2);
+                    px.fillRect(cx - 3, cy + 2, 2, 2);
+                }
+
+                // Highlight
+                px.fillStyle = '#ffee88';
+                px.fillRect(cx - size/2 + 1, cy - size/2 + 1, 2, 2);
             }
         });
 
